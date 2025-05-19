@@ -54,7 +54,11 @@ const Login = () => {
         <Row className="min-vh-100 align-items-center">
           <Col md={6} xs={12} order-md={1} order={2} className="bg-login">
             <div className="logo-container">
-              <img src="/logo.png" alt="Logo" className="login-logo" />
+              <img
+                src="https://i.ibb.co/4nRfHRqz/Sistema-de-tickets-Logo-removebg-preview.png"
+                alt="Logo"
+                className="login-logo"
+              />
             </div>
           </Col>
           <Col md={6} xs={12} order-md={2} order={1}>

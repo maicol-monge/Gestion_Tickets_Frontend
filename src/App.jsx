@@ -10,14 +10,20 @@ import { AuthContext } from "./context/AuthContext";
 import Login from "./components/Login";
 import Home from "./pages/Home";
 import Empresa from "./pages/crudEmpresa(test)";
+import CustomNavbar from "./components/CustomNavbar";
 
 import "react-bootstrap";
 
 function App() {
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return <div>Cargando...</div>; // O un spinner de carga
+  }
 
   return (
     <Router>
+      {isAuthenticated && <CustomNavbar />}
       <Routes>
         {/* Ruta raíz: muestra Home si está logueado, si no, va a Login */}
         <Route
@@ -32,9 +38,15 @@ function App() {
         />
 
         {/* Ruta protegida para Empresa */}
-        <Route
+        {/* <Route
           path="/empresa"
           element={isAuthenticated ? <Empresa /> : <Navigate to="/login" />}
+        /> */}
+
+        {/* Ruta para crear tickets */}
+        <Route
+          path="/crear-ticket"
+          element={isAuthenticated ? <Empresa /> : <Navigate to="/" />}
         />
       </Routes>
     </Router>

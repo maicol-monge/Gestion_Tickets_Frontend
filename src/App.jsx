@@ -11,6 +11,8 @@ import Login from "./components/Login";
 import Home from "./pages/Home";
 import Empresa from "./pages/crudEmpresa(test)";
 import CustomNavbar from "./components/CustomNavbar";
+import MisAsignaciones from './pages/MisAsignaciones';
+
 
 import "react-bootstrap";
 
@@ -48,6 +50,12 @@ function App() {
           path="/crear-ticket"
           element={isAuthenticated ? <Empresa /> : <Navigate to="/" />}
         />
+
+        <Route
+        path="/MisAsignaciones"  // Ruta absoluta con /
+        element={isAuthenticated ? <MisAsignaciones /> : <Navigate to="/login" />}
+        />
+        
       </Routes>
     </Router>
   );

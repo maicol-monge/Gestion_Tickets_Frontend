@@ -36,7 +36,7 @@ const CustomNavbar = () => {
                 <Nav.Link as={Link} to="/crear-ticket">
                   Crear ticket
                 </Nav.Link>
-                <Nav.Link as={Link} to="/mis-asignaciones">
+                <Nav.Link as={Link} to="/MisAsignaciones">
                   Mis asignaciones
                 </Nav.Link>
                 <Nav.Link as={Link} to="/gestion-tickets">
@@ -44,6 +44,9 @@ const CustomNavbar = () => {
                 </Nav.Link>
                 <Nav.Link as={Link} to="/gestion-usuarios">
                   Gestión de usuarios
+                </Nav.Link>
+                <Nav.Link as={Link} to="/gestion-empresa">
+                  Gestión de empresa
                 </Nav.Link>
                 <Nav.Link as={Link} to="/informes">
                   Informes
@@ -85,7 +88,7 @@ const CustomNavbar = () => {
                 <Nav.Link as={Link} to="/crear-ticket">
                   Crear ticket
                 </Nav.Link>
-                <Nav.Link as={Link} to="/mis-asignaciones">
+                <Nav.Link as={Link} to="/MisAsignaciones">
                   Mis asignaciones
                 </Nav.Link>
               </Nav>

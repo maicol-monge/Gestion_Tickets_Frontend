@@ -11,8 +11,13 @@ import Login from "./components/Login";
 import Home from "./pages/Home";
 import Empresa from "./pages/GestionEmpresa";
 import CustomNavbar from "./components/CustomNavbar";
+
 import CrearTicket from "./pages/CrearTicket";
 import GestionTicket from "./pages/GestionTicket";
+
+import MisAsignaciones from './pages/MisAsignaciones';
+
+
 
 import "react-bootstrap";
 
@@ -52,12 +57,18 @@ function App() {
           element={isAuthenticated ? <CrearTicket /> : <Navigate to="/login" />}
         />
 
+
         {/* Ruta para gestionar tickets */}
         <Route
           path="/gestion-tickets"
           element={isAuthenticated ? <GestionTicket /> : <Navigate to="/login" />}
         />
 
+        <Route
+        path="/MisAsignaciones"  // Ruta absoluta con /
+        element={isAuthenticated ? <MisAsignaciones /> : <Navigate to="/login" />}
+        />
+        
       </Routes>
     </Router>
   );

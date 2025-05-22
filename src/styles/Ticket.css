@@ -1,0 +1,19 @@
+.container-reporte {
+    background-color: #2b3945;
+}
+
+.btn-vermas {
+    background-color: #2b3945;
+    color: #fff;
+    border: 1px solid #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-vermas:hover {
+    transition: 0.5s;
+    transform: scale(1.05);
+    color: white;
+
+}

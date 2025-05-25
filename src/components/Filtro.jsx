@@ -4,7 +4,7 @@ import "../styles/Filtro.css";
 
 const Filtro = ({ onFilterChange }) => {
   const [filters, setFilters] = useState({
-    estado: "activos",
+    estado: "todos",
     prioridad: "",
     idCategoria: "",
     mes: "",

@@ -12,6 +12,8 @@ import Home from "./pages/Home";
 import Empresa from "./pages/crudEmpresa(test)";
 import CustomNavbar from "./components/CustomNavbar";
 import MisAsignaciones from './pages/MisAsignaciones';
+import Informes from './pages/Informes';
+import Estadisticas from './pages/Estadisticas';
 
 
 import "react-bootstrap";
@@ -55,7 +57,16 @@ function App() {
         path="/MisAsignaciones"  // Ruta absoluta con /
         element={isAuthenticated ? <MisAsignaciones /> : <Navigate to="/login" />}
         />
+
+        <Route
+        path="/Informes"  // Ruta absoluta con /
+        element={isAuthenticated ? <Informes /> : <Navigate to="/login" />}
+        />
         
+        <Route
+        path="/Estadisticas"  // Ruta absoluta con /
+        element={isAuthenticated ? <Estadisticas /> : <Navigate to="/login" />}
+        />
       </Routes>
     </Router>
   );

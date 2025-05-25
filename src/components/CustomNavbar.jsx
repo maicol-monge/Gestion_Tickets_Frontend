@@ -51,9 +51,6 @@ const CustomNavbar = () => {
                 <Nav.Link as={Link} to="/gestion-empresa">
                   Gestión de empresa
                 </Nav.Link>
-                <Nav.Link as={Link} to="/informes">
-                  Informes
-                </Nav.Link>
               </Nav>
               <Nav>
                 <Navbar.Text className="me-3">

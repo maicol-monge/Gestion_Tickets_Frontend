@@ -24,6 +24,8 @@ import CrearTicket from "./pages/CrearTicket";
 import GestionTicket from "./pages/GestionTicket";
 
 import MisAsignaciones from './pages/MisAsignaciones';
+import Informes from './pages/Informes';
+import Estadisticas from './pages/Estadisticas';
 
 
 
@@ -98,7 +100,16 @@ function App() {
         path="/MisAsignaciones"  // Ruta absoluta con /
         element={isAuthenticated ? <MisAsignaciones /> : <Navigate to="/login" />}
         />
+
+        <Route
+        path="/Informes"  // Ruta absoluta con /
+        element={isAuthenticated ? <Informes /> : <Navigate to="/login" />}
+        />
         
+        <Route
+        path="/Estadisticas"  // Ruta absoluta con /
+        element={isAuthenticated ? <Estadisticas /> : <Navigate to="/login" />}
+        />
       </Routes>
     </Router>
   );

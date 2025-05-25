@@ -4,7 +4,7 @@ import "../styles/Filtro.css";
 
 const Filtro = ({ onFilterChange }) => {
   const [filters, setFilters] = useState({
-    estado: 'activos',
+    estado: "activos",
     prioridad: "",
     idCategoria: "",
     mes: "",
@@ -14,33 +14,64 @@ const Filtro = ({ onFilterChange }) => {
 
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [anios, setAnios] = useState([]);
+
+  useEffect(() => {
+    const fetchAnios = async () => {
+      try {
+        // Cambia la URL por la de tu API
+        const response = await fetch(
+          "https://localhost:7106/api/Filtro/obtener-anio-mas-antiguo"
+        );
+        // El endpoint retorna un número, es decir, el año más antiguo
+        const anioMasAntiguo = await response.json();
+        const currentYear = new Date().getFullYear();
+        // Se construye el arreglo agregando en primer lugar la opción "todos"
+        const years = [{ value: "", label: "todos" }];
+        // Se recorre desde el año más antiguo hasta el año actual
+        for (let year = anioMasAntiguo; year <= currentYear; year++) {
+          years.push({ value: year, label: year });
+        }
+        setAnios(years);
+      } catch (error) {
+        console.error("Error al consultar el año más antiguo:", error);
+      }
+    };
+
+    fetchAnios();
+  }, []);
 
   // Obtener categorías de la API al cargar el componente
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const response = await fetch('https://localhost:7106/api/Filtro/obtener-categorias');
+        const response = await fetch(
+          "https://localhost:7106/api/Filtro/obtener-categorias"
+        );
         if (!response.ok) {
-          throw new Error('Error al obtener categorías');
+          throw new Error("Error al obtener categorías");
         }
         const data = await response.json();
-        
+
         // Mapear los datos de la API al formato que espera tu componente
-        const categoriasFormateadas = data.map(cat => ({
+        const categoriasFormateadas = data.map((cat) => ({
           value: cat.id_categoria,
-          label: cat.nombre_categoria // Asumiendo que hay un campo 'nombre' en tu modelo
+          label: cat.nombre_categoria, // Asumiendo que hay un campo 'nombre' en tu modelo
         }));
-        
+
         // Agregar la opción "todos" al principio
-        setCategorias([{ value: '', label: 'todos' }, ...categoriasFormateadas]);
+        setCategorias([
+          { value: "", label: "todos" },
+          ...categoriasFormateadas,
+        ]);
       } catch (error) {
-        console.error('Error:', error);
+        console.error("Error:", error);
         // Opción de respaldo en caso de error
         setCategorias([
-          { value: '', label: 'todos' },
-          { value: 1, label: 'ventas' },
-          { value: 2, label: 'compras' },
-          { value: 3, label: 'marketing' },
+          { value: "", label: "todos" },
+          { value: 1, label: "ventas" },
+          { value: 2, label: "compras" },
+          { value: 3, label: "marketing" },
         ]);
       } finally {
         setLoading(false);
@@ -51,34 +82,36 @@ const Filtro = ({ onFilterChange }) => {
   }, []);
 
   const prioridades = [
-    { value: '', label: 'todos' },
-    { value: 'critico', label: 'crítico' },
-    { value: 'importante', label: 'importante' },
-    { value: 'baja', label: 'baja' },
+    { value: "", label: "todos" },
+    { value: "critico", label: "crítico" },
+    { value: "importante", label: "importante" },
+    { value: "baja", label: "baja" },
   ];
 
   const meses = [
-    { value: '', label: 'todos' },
-    { value: 1, label: 'enero' },
-    { value: 2, label: 'febrero' },
-    { value: 3, label: 'marzo' },
-    { value: 4, label: 'abril' },
-    { value: 5, label: 'mayo' },
-    { value: 6, label: 'junio' },
-    { value: 7, label: 'julio' },
-    { value: 8, label: 'agosto' },
-    { value: 9, label: 'septiembre' },
-    { value: 10, label: 'octubre' },
-    { value: 11, label: 'noviembre' },
-    { value: 12, label: 'diciembre' },
+    { value: "", label: "todos" },
+    { value: 1, label: "enero" },
+    { value: 2, label: "febrero" },
+    { value: 3, label: "marzo" },
+    { value: 4, label: "abril" },
+    { value: 5, label: "mayo" },
+    { value: 6, label: "junio" },
+    { value: 7, label: "julio" },
+    { value: 8, label: "agosto" },
+    { value: 9, label: "septiembre" },
+    { value: 10, label: "octubre" },
+    { value: 11, label: "noviembre" },
+    { value: 12, label: "diciembre" },
   ];
 
-  const anios = [
-    { value: '', label: 'todos' },
-    { value: 2023, label: 2023 },
-    { value: 2024, label: 2024 },
-    { value: 2025, label: 2025 },
-  ];
+  //const anios = obtenerAnios();
+
+  // const anios = [
+  //   { value: "", label: "todos" },
+  //   { value: 2023, label: 2023 },
+  //   { value: 2024, label: 2024 },
+  //   { value: 2025, label: 2025 },
+  // ];
 
   const handleEstadoChange = (nuevoEstado) => {
     const newFilters = { ...filters, estado: nuevoEstado };
@@ -114,34 +147,55 @@ const Filtro = ({ onFilterChange }) => {
           boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)",
         }}
       >
-        <Form onSubmit={handleBuscarSubmit} className="row g-3" style={{ width: "100%" }}>
+        <Form
+          onSubmit={handleBuscarSubmit}
+          className="row g-3"
+          style={{ width: "100%" }}
+        >
           <nav className="text-start">Filtros</nav>
 
           {/* Contenedor principal responsive */}
           <div className="d-flex flex-column flex-md-row gap-4 align-items-start justify-content-between">
             {/* Filtro Activo/Todos */}
-            <div className="d-flex flex-column gap-2 mb-3 mb-md-0">
-              <div className="d-flex align-items-center gap-2">
-                <Form.Check
+            <div className="d-flex align-items-center gap-2">
+              {/* Botón para "Activos" */}
+              <label
+                className={`filtro-toggle ${
+                  filters.estado === "activos" ? "activo" : ""
+                }`}
+                onClick={() => handleEstadoChange("activos")}
+                style={{ cursor: "pointer" }}
+              >
+                Activos
+                {/* Si necesitas actualizar el input, éste se puede ocultar */}
+                <input
                   type="radio"
-                  id="estado-activos"
                   name="estado"
-                  checked={filters.estado === 'activos'}
-                  onChange={() => handleEstadoChange('activos')}
-                  label="Activos"
+                  value="activos"
+                  checked={filters.estado === "activos"}
+                  onChange={() => {}}
+                  style={{ display: "none" }}
                 />
-              </div>
+              </label>
 
-              <div className="d-flex align-items-center gap-2">
-                <Form.Check
+              {/* Botón para "Todos" */}
+              <label
+                className={`filtro-toggle ${
+                  filters.estado === "todos" ? "activo" : ""
+                }`}
+                onClick={() => handleEstadoChange("todos")}
+                style={{ cursor: "pointer" }}
+              >
+                Todos
+                <input
                   type="radio"
-                  id="estado-todos"
                   name="estado"
-                  checked={filters.estado === 'todos'}
-                  onChange={() => handleEstadoChange('todos')}
-                  label="Todos"
+                  value="todos"
+                  checked={filters.estado === "todos"}
+                  onChange={() => {}}
+                  style={{ display: "none" }}
                 />
-              </div>
+              </label>
             </div>
 
             {/* Prioridad y Categoría */}
@@ -150,8 +204,8 @@ const Filtro = ({ onFilterChange }) => {
                 <Form.Label htmlFor="prioridad" className="m-0">
                   Prioridad:
                 </Form.Label>
-                <Form.Select 
-                  id="prioridad" 
+                <Form.Select
+                  id="prioridad"
                   value={filters.prioridad}
                   onChange={handleInputChange}
                 >
@@ -167,8 +221,8 @@ const Filtro = ({ onFilterChange }) => {
                 <Form.Label htmlFor="idCategoria" className="m-0">
                   Categoría:
                 </Form.Label>
-                <Form.Select 
-                  id="idCategoria" 
+                <Form.Select
+                  id="idCategoria"
                   value={filters.idCategoria}
                   onChange={handleInputChange}
                   disabled={loading}
@@ -212,9 +266,9 @@ const Filtro = ({ onFilterChange }) => {
                   onChange={handleInputChange}
                   style={{ minWidth: "20vh" }}
                 >
-                  {anios.map((opcion) => (
-                    <option key={opcion.value} value={opcion.value}>
-                      {opcion.label}
+                  {anios.map((item, index) => (
+                    <option key={index} value={item.value}>
+                      {item.label}
                     </option>
                   ))}
                 </Form.Select>
@@ -227,8 +281,8 @@ const Filtro = ({ onFilterChange }) => {
             <Form.Label htmlFor="textoBusqueda" className="m-0">
               Buscar:
             </Form.Label>
-            <Form.Control 
-              type="text" 
+            <Form.Control
+              type="text"
               id="textoBusqueda"
               value={filters.textoBusqueda}
               onChange={handleBuscarChange}

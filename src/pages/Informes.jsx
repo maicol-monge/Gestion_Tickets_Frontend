@@ -3,6 +3,9 @@ import { Container, Spinner, Alert } from "react-bootstrap";
 import "../styles/Informes.css";
 import { AuthContext } from "../context/AuthContext";
 import Ticket from "../components/Ticket";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import "jspdf-autotable";
 
 const Informes = () => {
   const { usuario } = useContext(AuthContext);
@@ -10,7 +13,7 @@ const Informes = () => {
   const [filtros, setFiltros] = useState({
     fecha: "",
     personal: "",
-    categoria: ""
+    categoria: "",
   });
 
   const [tickets, setTickets] = useState([]);
@@ -27,7 +30,7 @@ const Informes = () => {
         const [resCategorias, resUsuarios, resFechas] = await Promise.all([
           fetch("https://localhost:7106/api/Filtro/obtener-categorias"),
           fetch("https://localhost:7106/api/Filtro/obtener-usuarios"),
-          fetch("https://localhost:7106/api/Filtro/obtener-fechas")
+          fetch("https://localhost:7106/api/Filtro/obtener-fechas"),
         ]);
 
         const dataCategorias = await resCategorias.json();
@@ -66,7 +69,9 @@ const Informes = () => {
       if (filtros.personal) params.append("personal", filtros.personal);
       if (filtros.categoria) params.append("categoria", filtros.categoria);
 
-      const response = await fetch(`https://localhost:7106/api/Filtro/tickets-todos?${params.toString()}`);
+      const response = await fetch(
+        `https://localhost:7106/api/Filtro/tickets-todos?${params.toString()}`
+      );
       if (!response.ok) throw new Error("Error al cargar tickets");
       const data = await response.json();
       setTickets(data);
@@ -78,44 +83,85 @@ const Informes = () => {
     }
   };
 
-  const descargarPDF = async (tipoReporte) => {
-    const params = new URLSearchParams();
-
-    if (filtros.fecha) params.append("fecha", filtros.fecha);
-    if (filtros.personal) params.append("personal", filtros.personal);
-    if (filtros.categoria) params.append("categoria", filtros.categoria);
-
-    const url = `https://localhost:7106/api/Informes/generar-pdf-${tipoReporte}?${params.toString()}`;
+  const generarPdf = async (tipoReporte, filtros) => {
+    const params = new URLSearchParams(filtros);
+    const url = `https://localhost:7106/api/Informes/${tipoReporte}?${params.toString()}`;
 
     try {
-      const response = await fetch(url, { method: "GET" });
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Error obteniendo datos para el PDF");
+      const { titulo, encabezados, filas } = await response.json();
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        alert("Error generando PDF:\n" + errorText);
-        return;
-      }
+      const doc = new jsPDF();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text(titulo, 20, 20);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.text(
+        `Fecha de generación: ${new Date().toLocaleDateString()}`,
+        20,
+        30
+      );
 
-      const blob = await response.blob();
-      const downloadUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = `${tipoReporte}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
+      // 💡 Usa doc.autoTable, no autoTable(doc, {...})
+      autoTable(doc, {
+        startY: 40,
+        head: [encabezados],
+        body: filas,
+        theme: "grid",
+        styles: { fontSize: 12 },
+      });
+
+      doc.save(`${titulo.replace(/\s+/g, "_")}.pdf`);
     } catch (error) {
-      alert("Error inesperado: " + error.message);
+      alert("Error generando PDF: " + error.message);
     }
   };
 
+  // const descargarPDF = async (tipoReporte) => {
+  //   const params = new URLSearchParams();
+
+  //   if (filtros.fecha) params.append("fecha", filtros.fecha);
+  //   if (filtros.personal) params.append("personal", filtros.personal);
+  //   if (filtros.categoria) params.append("categoria", filtros.categoria);
+
+  //   const url = `https://localhost:7106/api/Informes/generar-pdf-${tipoReporte}?${params.toString()}`;
+
+  //   try {
+  //     const response = await fetch(url, { method: "GET" });
+
+  //     if (!response.ok) {
+  //       const errorText = await response.text();
+  //       alert("Error generando PDF:\n" + errorText);
+  //       return;
+  //     }
+
+  //     const blob = await response.blob();
+  //     const downloadUrl = URL.createObjectURL(blob);
+  //     const a = document.createElement("a");
+  //     a.href = downloadUrl;
+  //     a.download = `${tipoReporte}.pdf`;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     document.body.removeChild(a);
+  //     URL.revokeObjectURL(downloadUrl);
+  //   } catch (error) {
+  //     alert("Error inesperado: " + error.message);
+  //   }
+  // };
+
   // Utilidades para mostrar datos
-  const getNombreCategoria = (nombreCategoria) => nombreCategoria || "Desconocido";
+  const getNombreCategoria = (nombreCategoria) =>
+    nombreCategoria || "Desconocido";
   const getNombreUsuario = (nombreUsuario) => nombreUsuario || "Desconocido";
   const formatFecha = (fechaString) => {
     if (!fechaString) return "";
-    return new Date(fechaString).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" });
+    return new Date(fechaString).toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
   const getPrioridad = (prioridad) => {
     const prioridades = {
@@ -161,7 +207,10 @@ const Informes = () => {
               >
                 <option value="">Todos</option>
                 {usuarios.map((u) => (
-                  <option key={u.id_usuario} value={`${u.nombre} ${u.apellido}`}>
+                  <option
+                    key={u.id_usuario}
+                    value={`${u.nombre} ${u.apellido}`}
+                  >
                     {u.nombre} {u.apellido}
                   </option>
                 ))}
@@ -194,17 +243,25 @@ const Informes = () => {
         </div>
 
         <div className="text-center mt-3">
-          <button className="boton-reporte mx-2" onClick={() => descargarPDF("tendencias")}>
+          <button
+            className="boton-reporte mx-2"
+            onClick={() => generarPdf("generar-pdf-tendencias", filtros)}
+          >
             Tendencias de Problemas
           </button>
-          <button className="boton-reporte mx-2" onClick={() => descargarPDF("tiempos")}>
+          <button
+            className="boton-reporte mx-2"
+            onClick={() => generarPdf("generar-pdf-tiempos", filtros)}
+          >
             Tiempos de Resolución
           </button>
-          <button className="boton-reporte mx-2" onClick={() => descargarPDF("estadisticas")}>
+          <button
+            className="boton-reporte mx-2"
+            onClick={() => generarPdf("generar-pdf-estadisticas", filtros)}
+          >
             Estadísticas Entrantes
           </button>
         </div>
-
 
         <div className="mt-4">
           {loading ? (
@@ -217,7 +274,9 @@ const Informes = () => {
           ) : error ? (
             <Alert variant="danger">Error al cargar los tickets: {error}</Alert>
           ) : tickets.length === 0 ? (
-            <p className="text-center">No hay tickets que coincidan con los filtros.</p>
+            <p className="text-center">
+              No hay tickets que coincidan con los filtros.
+            </p>
           ) : (
             <div className="d-flex flex-column gap-3">
               {tickets.map((t) => (

@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
+import Swal from "sweetalert2";
+import axios from "axios";
+//import Filtro from "../components/Filtro";
+import Ticket from "../components/Ticket";
+import "../styles/Home.css";
 import { Container, Spinner, Alert } from "react-bootstrap";
-import Filtro from "./Filtro";
-import Ticket from "./Ticket";
-import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext"; // Ajusta la ruta según tu estructura
+import Filtro from "../components/Filtro";
 
-const ListaTickets = () => {
+const GestionTicket = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [categorias, setCategorias] = useState([]);
-  const { usuario } = useContext(AuthContext); // Obtener el usuario logueado
   //const [usuario, setUsuario] = useState();
 
   // Función para cargar tickets con filtros
@@ -31,7 +32,6 @@ const ListaTickets = () => {
       if (filters.anio) params.append("anio", filters.anio);
       if (filters.textoBusqueda)
         params.append("textoBusqueda", filters.textoBusqueda);
-      params.append("idUsuario", usuario.id_usuario); // Agregar ID de usuario
 
       const url = `https://localhost:7106/api/Filtro/buscar?${params.toString()}`;
       console.log("URL de búsqueda:", url); // Para depuración
@@ -110,48 +110,56 @@ const ListaTickets = () => {
   const getEstado = (estado) => {
     return estado === "A" ? "Activo" : "Cerrado";
   };
-
   return (
-    <Container className="my-4">
-      <h2 className="mb-4">Mis Tickets</h2>
+    <div className="home-container mt-5" style={{}}>
+      <div className="d-flex justify-content-center pt-3">
+        <div style={{ width: "75%" }}>
+          {/* Controla el ancho máximo */}
+          <Container className="my-4">
+            <h2 className="mb-4">Todos los tickets</h2>
 
-      {/* Componente de Filtro */}
-      <Filtro onFilterChange={handleFilterChange} />
+            {/* Componente de Filtro */}
+            <Filtro onFilterChange={handleFilterChange} />
 
-      {/* Resultados */}
-      <div className="mt-4">
-        {loading ? (
-          <div className="text-center">
-            <Spinner animation="border" role="status">
-              <span className="visually-hidden">Cargando...</span>
-            </Spinner>
-            <p>Cargando tickets...</p>
-          </div>
-        ) : error ? (
-          <Alert variant="danger">Error al cargar los tickets: {error}</Alert>
-        ) : tickets.length === 0 ? (
-          <Alert variant="info">
-            No se encontraron tickets con los filtros seleccionados
-          </Alert>
-        ) : (
-          <div className="d-flex flex-column gap-3">
-            {tickets.map((ticket) => (
-              <Ticket
-                key={ticket.id_ticket}
-                titulo={ticket.titulo}
-                fecha={formatFecha(ticket.fecha_creacion)}
-                descripcion={ticket.descripcion}
-                prioridad={getPrioridad(ticket.prioridad)}
-                estado={getEstado(ticket.estado)}
-                asignado={getNombreUsuario(ticket.id_usuario)}
-                categoria={getNombreCategoria(ticket.id_categoria)}
-              />
-            ))}
-          </div>
-        )}
+            {/* Resultados */}
+            <div className="mt-4">
+              {loading ? (
+                <div className="text-center">
+                  <Spinner animation="border" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                  </Spinner>
+                  <p>Cargando tickets...</p>
+                </div>
+              ) : error ? (
+                <Alert variant="danger">
+                  Error al cargar los tickets: {error}
+                </Alert>
+              ) : tickets.length === 0 ? (
+                <Alert variant="info">
+                  No se encontraron tickets con los filtros seleccionados
+                </Alert>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {tickets.map((ticket) => (
+                    <Ticket
+                      key={ticket.id_ticket}
+                      titulo={ticket.titulo}
+                      fecha={formatFecha(ticket.fecha_creacion)}
+                      descripcion={ticket.descripcion}
+                      prioridad={getPrioridad(ticket.prioridad)}
+                      estado={getEstado(ticket.estado)}
+                      asignado={getNombreUsuario(ticket.id_usuario)}
+                      categoria={getNombreCategoria(ticket.id_categoria)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </Container>
+        </div>
       </div>
-    </Container>
+    </div>
   );
 };
 
-export default ListaTickets;
+export default GestionTicket;

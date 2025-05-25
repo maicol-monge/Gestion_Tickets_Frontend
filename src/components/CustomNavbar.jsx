@@ -1,5 +1,5 @@
-import React, { useContext } from "react";
-import { Navbar, Nav, Container, Button } from "react-bootstrap";
+import React, { useState, useContext } from "react";
+import { Navbar, Nav, Container, Button, NavDropdown } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext"; // Ajusta la ruta según tu estructura
 import "../styles/CustomNavbar.css"; // Asegúrate de tener este archivo CSS
@@ -7,13 +7,37 @@ import "../styles/CustomNavbar.css"; // Asegúrate de tener este archivo CSS
 const CustomNavbar = () => {
   const { usuario, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [dropdownShow, setDropdownShow] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
+  // Controla que el dropdown se muestre al pasar el mouse
+  const handleMouseEnter = () => setDropdownShow(true);
+  const handleMouseLeave = () => setDropdownShow(false);
+
   if (!usuario) return null; // No mostrar navbar si no hay usuario logueado
+
+  // Creamos el dropdown reutilizable para el saludo
+  const userDropdown = (
+    <NavDropdown
+      title={`Bienvenido/a, ${usuario.nombre} ${usuario.apellido}`}
+      id="userDropdown"
+      show={dropdownShow}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      align="end"
+      // Puedes agregar una clase personalizada para estilos extra, por ejemplo:
+      className="hover-dropdown"
+    >
+      <NavDropdown.Item as={Link} to="/cambiar-contrasena">
+        Cambiar Contraseña
+      </NavDropdown.Item>
+      <NavDropdown.Item onClick={handleLogout}>Cerrar Sesión</NavDropdown.Item>
+    </NavDropdown>
+  );
 
   // Navbar para administradores
   if (usuario.rol === "admin") {
@@ -52,14 +76,7 @@ const CustomNavbar = () => {
                   Gestión de empresa
                 </Nav.Link>
               </Nav>
-              <Nav>
-                <Navbar.Text className="me-3">
-                  Bienvenido/a, {usuario.nombre} {usuario.apellido}
-                </Navbar.Text>
-                <Button variant="outline-light" onClick={handleLogout}>
-                  Cerrar Sesión
-                </Button>
-              </Nav>
+              <Nav>{userDropdown}</Nav>
             </Navbar.Collapse>
           </Container>
         </Navbar>
@@ -92,14 +109,7 @@ const CustomNavbar = () => {
                   Mis asignaciones
                 </Nav.Link>
               </Nav>
-              <Nav>
-                <Navbar.Text className="me-3">
-                  Bienvenido/a, {usuario.nombre} {usuario.apellido}
-                </Navbar.Text>
-                <Button variant="outline-light" onClick={handleLogout}>
-                  Cerrar Sesión
-                </Button>
-              </Nav>
+              <Nav>{userDropdown}</Nav>
             </Navbar.Collapse>
           </Container>
         </Navbar>
@@ -128,14 +138,7 @@ const CustomNavbar = () => {
                 Crear ticket
               </Nav.Link>
             </Nav>
-            <Nav>
-              <Navbar.Text className="me-3">
-                Bienvenido/a, {usuario.nombre} {usuario.apellido}
-              </Navbar.Text>
-              <Button variant="outline-light" onClick={handleLogout}>
-                Cerrar Sesión
-              </Button>
-            </Nav>
+            <Nav>{userDropdown}</Nav>
           </Navbar.Collapse>
         </Container>
       </Navbar>

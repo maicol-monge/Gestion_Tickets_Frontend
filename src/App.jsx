@@ -13,24 +13,20 @@ import Empresa from "./pages/GestionEmpresa";
 import CrearUsuarioInterno from "./pages/crearUsuariosInternos";
 import FiltrarUsuarios from "./pages/gestionUsuarios";
 
-
 import CrearUsuarioExterno from "./pages/crearUsuariosExternos";
 import UsuariosFiltros from "./pages/gestionUsuarios";
-
+import CambiarContrasena from "./pages/CambiarContrasena";
 
 import CustomNavbar from "./components/CustomNavbar";
 
 import CrearTicket from "./pages/CrearTicket";
 import GestionTicket from "./pages/GestionTicket";
 
-import MisAsignaciones from './pages/MisAsignaciones';
-import Informes from './pages/Informes';
-import Estadisticas from './pages/Estadisticas';
-
-
+import MisAsignaciones from "./pages/MisAsignaciones";
+import Informes from "./pages/Informes";
+import Estadisticas from "./pages/Estadisticas";
 
 import "react-bootstrap";
-
 
 function App() {
   const { isAuthenticated, loading } = useContext(AuthContext);
@@ -40,7 +36,6 @@ function App() {
   }
 
   return (
-    
     <Router>
       {isAuthenticated && <CustomNavbar />}
       <Routes>
@@ -52,17 +47,30 @@ function App() {
 
         <Route
           path="/crear-usuario-interno"
-          element={isAuthenticated ? <CrearUsuarioInterno /> : <Navigate to="/login" />}
+          element={
+            isAuthenticated ? <CrearUsuarioInterno /> : <Navigate to="/login" />
+          }
         />
 
-         <Route
+        <Route
           path="/gestion-usuarios"
-          element={isAuthenticated ? <UsuariosFiltros /> : <Navigate to="/login" />}
+          element={
+            isAuthenticated ? <UsuariosFiltros /> : <Navigate to="/login" />
+          }
         />
 
         <Route
           path="/crear-usuario-externo"
-          element={isAuthenticated ? <CrearUsuarioExterno /> : <Navigate to="/login" />}
+          element={
+            isAuthenticated ? <CrearUsuarioExterno /> : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/cambiar-contrasena"
+          element={
+            isAuthenticated ? <CambiarContrasena /> : <Navigate to="/login" />
+          }
         />
 
         {/* Página de login: si ya está autenticado, redirige a Home */}
@@ -72,10 +80,12 @@ function App() {
         />
 
         {/* Ruta protegida para Empresa */}
-        { <Route
-          path="/gestion-empresa"
-          element={isAuthenticated ? <Empresa /> : <Navigate to="/login" />}
-        /> }
+        {
+          <Route
+            path="/gestion-empresa"
+            element={isAuthenticated ? <Empresa /> : <Navigate to="/login" />}
+          />
+        }
 
         {/* Ruta para crear tickets */}
         <Route
@@ -86,29 +96,36 @@ function App() {
         {/* Ruta para filtrar usuarios */}
         <Route
           path="/filtrar"
-          element={isAuthenticated ? <FiltrarUsuarios /> : <Navigate to="/login" />}
+          element={
+            isAuthenticated ? <FiltrarUsuarios /> : <Navigate to="/login" />
+          }
         />
-
 
         {/* Ruta para gestionar tickets */}
         <Route
           path="/gestion-tickets"
-          element={isAuthenticated ? <GestionTicket /> : <Navigate to="/login" />}
+          element={
+            isAuthenticated ? <GestionTicket /> : <Navigate to="/login" />
+          }
         />
 
         <Route
-        path="/MisAsignaciones"  // Ruta absoluta con /
-        element={isAuthenticated ? <MisAsignaciones /> : <Navigate to="/login" />}
+          path="/MisAsignaciones" // Ruta absoluta con /
+          element={
+            isAuthenticated ? <MisAsignaciones /> : <Navigate to="/login" />
+          }
         />
 
         <Route
-        path="/Informes"  // Ruta absoluta con /
-        element={isAuthenticated ? <Informes /> : <Navigate to="/login" />}
+          path="/Informes" // Ruta absoluta con /
+          element={isAuthenticated ? <Informes /> : <Navigate to="/login" />}
         />
-        
+
         <Route
-        path="/Estadisticas"  // Ruta absoluta con /
-        element={isAuthenticated ? <Estadisticas /> : <Navigate to="/login" />}
+          path="/Estadisticas" // Ruta absoluta con /
+          element={
+            isAuthenticated ? <Estadisticas /> : <Navigate to="/login" />
+          }
         />
       </Routes>
     </Router>

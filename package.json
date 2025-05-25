@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.5",
+    "@supabase/supabase-js": "^2.49.8",
     "all": "^0.0.0",
     "axios": "^1.9.0",
     "bootstrap": "^5.3.6",
@@ -21,7 +21,6 @@
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0",
     "sweetalert2": "^11.21.2"
-
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

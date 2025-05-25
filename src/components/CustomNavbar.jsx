@@ -45,11 +45,11 @@ const CustomNavbar = () => {
                 <Nav.Link as={Link} to="/gestion-usuarios">
                   Gestión de usuarios
                 </Nav.Link>
+                <Nav.Link as={Link} to="/Estadisticas">
+                  Estadisticas
+                </Nav.Link>
                 <Nav.Link as={Link} to="/gestion-empresa">
                   Gestión de empresa
-                </Nav.Link>
-                <Nav.Link as={Link} to="/informes">
-                  Informes
                 </Nav.Link>
               </Nav>
               <Nav>

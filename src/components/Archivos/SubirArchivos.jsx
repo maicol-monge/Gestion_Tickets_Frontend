@@ -11,30 +11,46 @@ const SubirArchivo = ({ archivo, onArchivoSubido, onArchivoEliminado }) => {
   const [url, setUrl] = useState(null);
   const [nombreArchivo, setNombreArchivo] = useState(null);
 
-  useEffect(() => {
-    const subir = async () => {
-      const nombre = `${Date.now()}_${archivo.name.replace(/\s/g, "_")}`;
-      setNombreArchivo(nombre);
-      const { error } = await supabase.storage
-        .from("files")
-        .upload(nombre, archivo);
+  // Función para subir el archivo (usada en useEffect y en reintentar)
+  const subirArchivo = async () => {
+    const nombre = `${Date.now()}_${archivo.name.replace(/\s/g, "_")}`;
+    setNombreArchivo(nombre);
+    const { error: uploadError } = await supabase.storage
+      .from("files")
+      .upload(nombre, archivo);
 
-      const { data } = supabase.storage
-        .from("files")
-        .getPublicUrl(nombre);
+    const { data, error: urlError } = supabase.storage.from("files").getPublicUrl(nombre);
 
-      if (error || !data || !data.publicUrl) {
-        setEstado("error");
-        onArchivoSubido({ url: null, error: error || "No se obtuvo URL", nombreArchivo: nombre });
-        return;
+    if (uploadError || !data || !data.publicUrl) {
+      // Si el archivo se subió pero no se pudo obtener la URL, intenta eliminarlo
+      if (!uploadError) {
+        await supabase.storage.from("files").remove([nombre]);
       }
+      setEstado("error");
+      onArchivoSubido({
+        url: null,
+        error: uploadError || urlError || "No se obtuvo URL",
+        nombreArchivo: nombre,
+      });
+      return;
+    }
 
-      setUrl(data.publicUrl);
-      setEstado("completado");
-      onArchivoSubido({ url: data.publicUrl, error: null, nombreArchivo: nombre });
-    };
+    // Guardar el nombre del archivo subido en localStorage
+    let archivosGuardados = JSON.parse(localStorage.getItem("archivos_subidos") || "[]");
+    archivosGuardados.push(nombre);
+    localStorage.setItem("archivos_subidos", JSON.stringify(archivosGuardados));
 
-    subir();
+    setUrl(data.publicUrl);
+    setEstado("completado");
+    onArchivoSubido({
+      url: data.publicUrl,
+      error: null,
+      nombreArchivo: nombre,
+    });
+  };
+
+  useEffect(() => {
+    subirArchivo();
     // eslint-disable-next-line
   }, []);
 
@@ -45,7 +61,9 @@ const SubirArchivo = ({ archivo, onArchivoSubido, onArchivoEliminado }) => {
       return;
     }
     setEstado("eliminando");
-    const { error } = await supabase.storage.from("files").remove([nombreArchivo]);
+    const { error } = await supabase.storage
+      .from("files")
+      .remove([nombreArchivo]);
     if (error) {
       setEstado("error");
       alert("No se pudo eliminar el archivo en Supabase: " + error.message);
@@ -53,6 +71,12 @@ const SubirArchivo = ({ archivo, onArchivoSubido, onArchivoEliminado }) => {
       return;
     }
     setEstado("eliminado");
+
+    // Quitar el archivo de localStorage
+    let archivosGuardados = JSON.parse(localStorage.getItem("archivos_subidos") || "[]");
+    archivosGuardados = archivosGuardados.filter((n) => n !== nombreArchivo);
+    localStorage.setItem("archivos_subidos", JSON.stringify(archivosGuardados));
+
     if (onArchivoEliminado) onArchivoEliminado(nombreArchivo);
   };
 
@@ -60,20 +84,56 @@ const SubirArchivo = ({ archivo, onArchivoSubido, onArchivoEliminado }) => {
     <li className="list-group-item d-flex justify-content-between align-items-center">
       <span>
         {archivo.name}{" "}
-        {estado === "subiendo" && <span className="text-primary">Subiendo...</span>}
+        {estado === "subiendo" && (
+          <span className="text-primary">Subiendo...</span>
+        )}
         {estado === "completado" && <span className="text-success">✔</span>}
-        {estado === "error" && <span className="text-danger">Error</span>}
-        {estado === "eliminando" && <span className="text-warning">Eliminando...</span>}
-        {estado === "eliminado" && <span className="text-muted">Eliminado</span>}
+        {estado === "error" && (
+          <>
+            <button
+              type="button"
+              className="btn btn-sm btn-warning ms-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEstado("subiendo");
+                setUrl(null);
+                setNombreArchivo(null);
+                subirArchivo();
+              }}
+            >
+              Reintentar
+            </button>
+          </>
+        )}
       </span>
-      {estado === "completado" && (
+      {/* Botón para quitar archivo, siempre visible excepto cuando está eliminando */}
+      {estado !== "eliminando" && (
         <button
           type="button"
-          className="btn btn-sm btn-danger"
-          onClick={eliminarArchivo}
-          disabled={estado !== "completado"}
+          className="btn btn-sm btn-outline-danger ms-2"
+          title="Quitar archivo"
+          onClick={async (e) => {
+            e.stopPropagation();
+            if (nombreArchivo && estado === "completado") {
+              setEstado("eliminando");
+              await supabase.storage.from("files").remove([nombreArchivo]);
+              // Quitar el archivo de localStorage
+              let archivosGuardados = JSON.parse(
+                localStorage.getItem("archivos_subidos") || "[]"
+              );
+              archivosGuardados = archivosGuardados.filter(
+                (n) => n !== nombreArchivo
+              );
+              localStorage.setItem(
+                "archivos_subidos",
+                JSON.stringify(archivosGuardados)
+              );
+            }
+            if (onArchivoEliminado) onArchivoEliminado(nombreArchivo);
+          }}
+          disabled={estado === "subiendo"}
         >
-          Quitar
+          ×
         </button>
       )}
     </li>

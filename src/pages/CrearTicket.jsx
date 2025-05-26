@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import SubirArchivo from "../components/Archivos/SubirArchivos";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  "https://wuluxasrfhivhpxcobxy.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1bHV4YXNyZmhpdmhweGNvYnh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3MjM2NTMsImV4cCI6MjA2MzI5OTY1M30.x6UXhPNtOx15vDTcUxyu-gmUYCyCdxXahyFbPb5-Iaw"
+);
 
 const CrearTicket = () => {
   const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -15,6 +21,21 @@ const CrearTicket = () => {
   const [archivos, setArchivos] = useState([]);
   const [subiendo, setSubiendo] = useState(false);
   const [cargandoCategorias, setCargandoCategorias] = useState(true);
+
+  // Referencia para el input file oculto
+  const fileInputRef = useRef(null);
+
+  // Limpiar archivos subidos al recargar la página
+  useEffect(() => {
+    const limpiarArchivosSubidos = async () => {
+      const archivosGuardados = JSON.parse(localStorage.getItem("archivos_subidos") || "[]");
+      if (archivosGuardados.length > 0) {
+        await supabase.storage.from("files").remove(archivosGuardados);
+        localStorage.removeItem("archivos_subidos");
+      }
+    };
+    limpiarArchivosSubidos();
+  }, []);
 
   // Cargar categorías desde la BD al montar
   useEffect(() => {
@@ -90,10 +111,10 @@ const CrearTicket = () => {
       Swal.fire("Campo requerido", "El título es obligatorio.", "error");
       return false;
     }
-    if (titulo.length > 100) {
+    if (titulo.length > 200) {
       Swal.fire(
         "Título muy largo",
-        "El título no debe superar 100 caracteres.",
+        "El título no debe superar 200 caracteres.",
         "error"
       );
       return false;
@@ -102,10 +123,10 @@ const CrearTicket = () => {
       Swal.fire("Campo requerido", "La descripción es obligatoria.", "error");
       return false;
     }
-    if (descripcion.length > 255) {
+    if (descripcion.length > 2000) {
       Swal.fire(
         "Descripción muy larga",
-        "La descripción no debe superar 255 caracteres.",
+        "La descripción no debe superar 2000 caracteres.",
         "error"
       );
       return false;
@@ -209,6 +230,11 @@ const CrearTicket = () => {
     setSubiendo(false);
   };
 
+  // Determina si el botón debe estar deshabilitado
+  const disableSubmit =
+    subiendo ||
+    archivos.some((a) => a.estado === "subiendo" || a.estado === "pendiente" || a.estado === "error") ;
+
   return (
     <div className="home-container mt-5">
       <h2 className="text-center fw-bold mb-4">Crear un ticket</h2>
@@ -224,10 +250,10 @@ const CrearTicket = () => {
             className="form-control"
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
-            maxLength={100}
+            maxLength={200}
             required
           />
-          <div className="form-text">{titulo.length}/100</div>
+          <div className="form-text">{titulo.length}/200</div>
         </div>
 
         <div className="mb-3">
@@ -239,10 +265,10 @@ const CrearTicket = () => {
             rows="4"
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
-            maxLength={255}
+            maxLength={2000}
             required
           />
-          <div className="form-text">{descripcion.length}/255</div>
+          <div className="form-text">{descripcion.length}/2000</div>
         </div>
 
         <div className="row mb-3">
@@ -304,7 +330,7 @@ const CrearTicket = () => {
 
         <div className="mb-3">
           <label className="form-label">
-            Adjuntar archivo: <span className="text-muted">(opcional, arrastra o pega archivos)</span>
+            Adjuntar archivo: <span className="text-muted">(opcional, arrastra, pega o haz click)</span>
           </label>
           <div
             className="border rounded p-3 mb-2 text-center"
@@ -319,9 +345,10 @@ const CrearTicket = () => {
               const files = Array.from(e.clipboardData.files);
               if (files.length) handleDropOrPaste(files);
             }}
+            onClick={() => fileInputRef.current && fileInputRef.current.click()}
           >
             <span className="text-muted">
-              Arrastra y suelta archivos aquí o pégalos (máx. 5)
+              Arrastra y suelta archivos aquí, pégalos o haz click para seleccionar (máx. 5)
             </span>
             <ul className="list-group mt-2">
               {archivos.map((a) =>
@@ -335,6 +362,20 @@ const CrearTicket = () => {
                 ) : null
               )}
             </ul>
+            {/* Input oculto para seleccionar archivos */}
+            <input
+              type="file"
+              multiple
+              style={{ display: "none" }}
+              ref={fileInputRef}
+              onChange={(e) => {
+                const files = Array.from(e.target.files);
+                handleDropOrPaste(files);
+                // Limpiar el input para permitir volver a seleccionar los mismos archivos si se desea
+                e.target.value = "";
+              }}
+              accept="*"
+            />
           </div>
         </div>
 
@@ -342,7 +383,7 @@ const CrearTicket = () => {
           <button
             className="btn btn-dark px-4"
             style={{ background: "#2B3945" }}
-            disabled={subiendo || categorias.length === 0}
+            disabled={disableSubmit || categorias.length === 0}
           >
             {subiendo ? "Subiendo archivos..." : "CREAR TICKET"}
           </button>

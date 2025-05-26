@@ -1,17 +1,23 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 export default function CrearUsuarioExterno() {
+  const navigate = useNavigate(); 
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [telefono, setTelefono] = useState("");
   const [correo, setCorreo] = useState("");
+  const [errorCorreo, setErrorCorreo] = useState("");
+  const [errorTelefono, setErrorTelefono] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [rol, setRol] = useState("admin");
   const [empresa, setEmpresa] = useState("");
   const [empresas, setEmpresas] = useState([]);
   const [errorContrasena, setErrorContrasena] = useState("");
+  const [contrasenaBloqueada, setContrasenaBloqueada] = useState(false);
 
   useEffect(() => {
     fetch("https://localhost:7106/api/Usuario/empresas")
@@ -20,13 +26,33 @@ export default function CrearUsuarioExterno() {
       .catch((err) => console.error("Error al cargar empresas:", err));
   }, []);
 
+  const generarContrasenaTemporal = () => {
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=';
+    let tempContrasena = 't3Mp';
+
+    for (let i = 0; i < 12; i++) {
+      tempContrasena += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+
+    setContrasena(tempContrasena);
+    setContrasenaBloqueada(true);
+    setErrorContrasena("");
+  };
+
   const validarContrasena = (valor) => {
-    setContrasena(valor);
-    const regex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
-    if (!regex.test(valor)) {
-      setErrorContrasena("La contraseña debe tener al menos 8 caracteres, una letra mayúscula, un número y un caracter especial.");
+    if (!contrasenaBloqueada) {
+      setContrasena(valor);
+    }
+  };
+
+  const validarTelefono = (valor) => {
+    const soloNumeros = valor.replace(/\D/g, '');
+    setTelefono(soloNumeros);
+    
+    if (soloNumeros.length !== 8) {
+      setErrorTelefono("El teléfono debe tener exactamente 8 dígitos");
     } else {
-      setErrorContrasena("");
+      setErrorTelefono("");
     }
   };
 
@@ -39,14 +65,16 @@ export default function CrearUsuarioExterno() {
     setEmpresa("");
     setMostrarContrasena(false);
     setErrorContrasena("");
+    setContrasenaBloqueada(false);
+    setErrorCorreo("");
+    setErrorTelefono("");
   };
 
-  const crearUsuario = (e) => {
+  const crearUsuario = async (e) => {
     e.preventDefault();
 
-    const regex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
-    if (!regex.test(contrasena)) {
-      setErrorContrasena("La contraseña debe tener al menos 8 caracteres, una letra mayúscula, un número y un caracter especial.");
+    if (telefono.length !== 8) {
+      setErrorTelefono("El teléfono debe tener exactamente 8 dígitos");
       return;
     }
 
@@ -60,29 +88,56 @@ export default function CrearUsuarioExterno() {
       id_empresa: parseInt(empresa),
     };
 
-    fetch("https://localhost:7106/api/Usuario/registrar-externo", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(nuevoUsuario),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Usuario creado:", data);
-        alert("Usuario externo creado correctamente");
-        limpiarCampos(); // Limpiamos los campos después del registro exitoso
-      })
-      .catch((error) => {
-        console.error("Error al crear usuario:", error);
-        alert("Hubo un error al crear el usuario");
+    try {
+      const respuesta = await fetch("https://localhost:7106/api/Usuario/registrar-externo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevoUsuario),
       });
+
+      const data = await respuesta.json();
+
+      if (respuesta.ok) {
+        await Swal.fire({
+          icon: "success",
+          title: "Usuario externo creado correctamente",
+          confirmButtonColor: "#3085d6"
+        });
+        limpiarCampos();
+      } else {
+        if (data.message && data.message.toLowerCase().includes("correo")) {
+          setErrorCorreo("Este correo electrónico ya está registrado");
+        } else {
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: data.message || "Error al crear usuario",
+            confirmButtonColor: "#d33"
+          });
+        }
+      }
+    } catch (error) {
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error al conectar con el servidor",
+        confirmButtonColor: "#d33"
+      });
+    }
   };
 
   return (
-    <div
-      style={{ width: "100vw", height: "100vh" }}
-      className="d-flex flex-column justify-content-start align-items-center pt-4"
-    >
-      <h2 className="fw-bold mb-4 text-center">Usuarios Externos</h2>
+    <div style={{ width: "100vw", height: "100vh" }} className="d-flex flex-column justify-content-start align-items-center pt-4">
+     <div className="d-flex justify-content-between align-items-center w-100" style={{ maxWidth: "950px" }}>
+        <h2 className="fw-bold mb-4 text-center flex-grow-1">Usuarios Externos</h2>
+        <button 
+          onClick={() => navigate(-1)} 
+          className="btn btn-outline-secondary"
+          style={{ marginLeft: "auto" }}
+        >
+          <i className="bi bi-arrow-left"></i> Volver
+        </button>
+      </div>
 
       <form onSubmit={crearUsuario} className="w-100" style={{ maxWidth: "950px" }}>
         <div className="border rounded-3 p-4">
@@ -107,7 +162,15 @@ export default function CrearUsuarioExterno() {
           <div className="row mb-3 align-items-center">
             <label className="col-12 col-sm-3 col-form-label fw-semibold">Teléfono:</label>
             <div className="col">
-              <input type="tel" className="form-control" value={telefono} onChange={(e) => setTelefono(e.target.value)} required />
+              <input
+                type="tel"
+                className={`form-control ${errorTelefono ? "is-invalid" : ""}`}
+                value={telefono}
+                onChange={(e) => validarTelefono(e.target.value)}
+                required
+                maxLength={8}
+              />
+              {errorTelefono && <div className="invalid-feedback d-block">{errorTelefono}</div>}
             </div>
           </div>
 
@@ -115,11 +178,21 @@ export default function CrearUsuarioExterno() {
           <div className="row mb-3 align-items-center">
             <label className="col-12 col-sm-3 col-form-label fw-semibold">Correo:</label>
             <div className="col">
-              <input type="email" className="form-control" value={correo} onChange={(e) => setCorreo(e.target.value)} required />
+              <input
+                type="email"
+                className={`form-control ${errorCorreo ? "is-invalid" : ""}`}
+                value={correo}
+                onChange={(e) => {
+                  setCorreo(e.target.value);
+                  setErrorCorreo("");
+                }}
+                required
+              />
+              {errorCorreo && <div className="invalid-feedback d-block">{errorCorreo}</div>}
             </div>
           </div>
 
-          {/* Contraseña con ícono y validación */}
+          {/* Contraseña */}
           <div className="row mb-3 align-items-center">
             <label className="col-12 col-sm-3 col-form-label fw-semibold">Contraseña:</label>
             <div className="col input-group">
@@ -129,6 +202,7 @@ export default function CrearUsuarioExterno() {
                 value={contrasena}
                 onChange={(e) => validarContrasena(e.target.value)}
                 required
+                readOnly={contrasenaBloqueada}
               />
               <button
                 type="button"
@@ -142,21 +216,28 @@ export default function CrearUsuarioExterno() {
             </div>
           </div>
 
-          {/* Empresa (cargada desde la BD) */}
+          {/* Generar contraseña */}
+          <div className="row mb-3">
+            <div className="col-12 col-sm-3"></div>
+            <div className="col">
+              <button type="button" className="btn btn-secondary" onClick={generarContrasenaTemporal}>
+                Generar contraseña temporal
+              </button>
+            </div>
+          </div>
+
+          {/* Empresa */}
           <div className="row mb-3 align-items-center">
             <label className="col-12 col-sm-3 col-form-label fw-semibold">Empresa:</label>
             <div className="col">
               <select className="form-select" value={empresa} onChange={(e) => setEmpresa(e.target.value)} required>
-                <option value="">Selecciona una empresa</option>
-                {empresas.map((e) => (
-                  <option key={e.id_empresa} value={e.id_empresa}>
-                    {e.nombre_empresa}
-                  </option>
+                <option value="">Seleccione una empresa</option>
+                {empresas.map((emp) => (
+                  <option key={emp.id_empresa} value={emp.id_empresa}>{emp.nombre_empresa}</option>
                 ))}
               </select>
             </div>
           </div>
-
         </div>
 
         {/* Botón Crear */}

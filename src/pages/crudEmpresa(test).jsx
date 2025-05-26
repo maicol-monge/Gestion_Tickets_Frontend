@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 const API_URL = "https://localhost:7106/api/empresa";
 
@@ -36,7 +37,12 @@ const EmpresaPage = () => {
       setEmpresaEncontrada(response.data);
     } catch (error) {
       setEmpresaEncontrada(null);
-      alert("Empresa no encontrada.");
+      await Swal.fire({
+        icon: "error",
+        title: "Empresa no encontrada",
+        text: "No se encontró ninguna empresa con ese nombre.",
+        confirmButtonColor: "#d33",
+      });
     }
   };
 
@@ -52,9 +58,19 @@ const EmpresaPage = () => {
         telefono: "",
       });
       cargarEmpresas();
-      alert("Empresa agregada.");
+      await Swal.fire({
+        icon: "success",
+        title: "Empresa agregada",
+        confirmButtonColor: "#3085d6",
+      });
     } catch (error) {
       console.error("Error al agregar empresa", error);
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo agregar la empresa.",
+        confirmButtonColor: "#d33",
+      });
     }
   };
 
@@ -63,8 +79,19 @@ const EmpresaPage = () => {
     try {
       await axios.delete(`${API_URL}/Eliminar/${id}`);
       cargarEmpresas();
+      await Swal.fire({
+        icon: "success",
+        title: "Empresa eliminada",
+        confirmButtonColor: "#3085d6",
+      });
     } catch (error) {
       console.error("Error al eliminar empresa", error);
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo eliminar la empresa.",
+        confirmButtonColor: "#d33",
+      });
     }
   };
 
@@ -141,7 +168,8 @@ const EmpresaPage = () => {
       <ul>
         {empresas.map((empresa) => (
           <li key={empresa.id_empresa}>
-            <strong>{empresa.nombre_empresa}</strong> - {empresa.direccion} - {empresa.telefono}
+            <strong>{empresa.nombre_empresa}</strong> - {empresa.direccion} -{" "}
+            {empresa.telefono}
             <button onClick={() => eliminarEmpresa(empresa.id_empresa)}>
               Eliminar
             </button>

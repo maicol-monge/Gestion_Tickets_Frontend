@@ -3,14 +3,20 @@ import { Container, Spinner, Alert } from "react-bootstrap";
 import "../styles/Informes.css";
 import { AuthContext } from "../context/AuthContext";
 import Ticket from "../components/Ticket";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import "jspdf-autotable";
+import logoEmpresa from "../assets/logo_sistema.png"; // Asegúrate de descargar el logo y guardarlo en src/assets
+import { useNavigate } from "react-router-dom";
 
 const Informes = () => {
   const { usuario } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [filtros, setFiltros] = useState({
     fecha: "",
     personal: "",
-    categoria: ""
+    categoria: "",
   });
 
   const [tickets, setTickets] = useState([]);
@@ -19,6 +25,7 @@ const Informes = () => {
   const [fechasDisponibles, setFechasDisponibles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState(null);
 
   // Cargar filtros dinámicos: fechas, usuarios, categorías
   useEffect(() => {
@@ -26,8 +33,8 @@ const Informes = () => {
       try {
         const [resCategorias, resUsuarios, resFechas] = await Promise.all([
           fetch("https://localhost:7106/api/Filtro/obtener-categorias"),
-          fetch("https://localhost:7106/api/Filtro/obtener-usuarios"),
-          fetch("https://localhost:7106/api/Filtro/obtener-fechas")
+          fetch("https://localhost:7106/api/Filtro/obtener-tecnicos"),
+          fetch("https://localhost:7106/api/Filtro/obtener-fechas"),
         ]);
 
         const dataCategorias = await resCategorias.json();
@@ -66,7 +73,9 @@ const Informes = () => {
       if (filtros.personal) params.append("personal", filtros.personal);
       if (filtros.categoria) params.append("categoria", filtros.categoria);
 
-      const response = await fetch(`https://localhost:7106/api/Filtro/tickets-todos?${params.toString()}`);
+      const response = await fetch(
+        `https://localhost:7106/api/Filtro/tickets-todos?${params.toString()}`
+      );
       if (!response.ok) throw new Error("Error al cargar tickets");
       const data = await response.json();
       setTickets(data);
@@ -78,44 +87,131 @@ const Informes = () => {
     }
   };
 
-  const descargarPDF = async (tipoReporte) => {
-    const params = new URLSearchParams();
+  const generarPdf = async (tipoReporte, filtros) => {
+    if (!tickets || tickets.length === 0) {
+      // Mejor diseño usando un modal simple de Bootstrap
+      const alerta = document.createElement("div");
+      alerta.className =
+        "alert alert-warning position-fixed top-0 start-50 translate-middle-x mt-3 shadow";
+      alerta.style.zIndex = 9999;
+      alerta.style.width = "fit-content";
+      alerta.innerHTML = `
+      <strong>¡Atención!</strong> No hay tickets que coincidan con los filtros. No se puede generar el PDF.
+    `;
+      document.body.appendChild(alerta);
+      setTimeout(() => {
+        alerta.remove();
+      }, 3000);
+      return;
+    }
 
-    if (filtros.fecha) params.append("fecha", filtros.fecha);
-    if (filtros.personal) params.append("personal", filtros.personal);
-    if (filtros.categoria) params.append("categoria", filtros.categoria);
-
-    const url = `https://localhost:7106/api/Informes/generar-pdf-${tipoReporte}?${params.toString()}`;
+    const params = new URLSearchParams(filtros);
+    const url = `https://localhost:7106/api/Informes/${tipoReporte}?${params.toString()}`;
 
     try {
-      const response = await fetch(url, { method: "GET" });
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Error obteniendo datos para el PDF");
+      const { titulo, encabezados, filas } = await response.json();
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        alert("Error generando PDF:\n" + errorText);
-        return;
-      }
+      const doc = new jsPDF();
 
-      const blob = await response.blob();
-      const downloadUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = `${tipoReporte}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
+      // Logo arriba del todo (ajusta la ruta si es necesario)
+      const logoImg = new Image();
+      logoImg.src = "https://i.ibb.co/4nRfHRqz/Sistema-de-tickets-Logo-removebg-preview.png";
+      logoImg.onload = () => {
+        doc.addImage(logoImg, "PNG", 85, 5, 40, 40); // Centrado arriba, cuadrado 40x40
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text(titulo, 20, 55);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        doc.text(
+          `Fecha de generación: ${new Date().toLocaleDateString()}`,
+          20,
+          65
+        );
+
+        // Mostrar los filtros usados debajo de la fecha
+        let filtrosTexto = "Filtros: ";
+        const filtrosUsados = [];
+        if (filtros.fecha) filtrosUsados.push(`Fecha: ${new Date(filtros.fecha).toLocaleDateString()}`);
+        if (filtros.personal) filtrosUsados.push(`Personal: ${filtros.personal}`);
+        if (filtros.categoria) filtrosUsados.push(`Categoría: ${filtros.categoria}`);
+        filtrosTexto += filtrosUsados.length > 0 ? filtrosUsados.join(" | ") : "Ninguno";
+        doc.setFontSize(11);
+        doc.text(filtrosTexto, 20, 72);
+
+        autoTable(doc, {
+          startY: 80,
+          head: [encabezados],
+          body: filas,
+          theme: "grid",
+          styles: { fontSize: 12 },
+        });
+
+        // Generar el PDF como Blob y mostrarlo en un iframe
+        const pdfBlob = doc.output("blob");
+        const pdfBlobUrl = URL.createObjectURL(pdfBlob);
+        setPdfUrl(pdfBlobUrl);
+      };
     } catch (error) {
-      alert("Error inesperado: " + error.message);
+      alert("Error generando PDF: " + error.message);
     }
   };
 
+  // Limpia el blobUrl anterior cuando se desmonta el componente o se genera uno nuevo
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
+
+  // const descargarPDF = async (tipoReporte) => {
+  //   const params = new URLSearchParams();
+
+  //   if (filtros.fecha) params.append("fecha", filtros.fecha);
+  //   if (filtros.personal) params.append("personal", filtros.personal);
+  //   if (filtros.categoria) params.append("categoria", filtros.categoria);
+
+  //   const url = `https://localhost:7106/api/Informes/generar-pdf-${tipoReporte}?${params.toString()}`;
+
+  //   try {
+  //     const response = await fetch(url, { method: "GET" });
+
+  //     if (!response.ok) {
+  //       const errorText = await response.text();
+  //       alert("Error generando PDF:\n" + errorText);
+  //       return;
+  //     }
+
+  //     const blob = await response.blob();
+  //     const downloadUrl = URL.createObjectURL(blob);
+  //     const a = document.createElement("a");
+  //     a.href = downloadUrl;
+  //     a.download = `${tipoReporte}.pdf`;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     document.body.removeChild(a);
+  //     URL.revokeObjectURL(downloadUrl);
+  //   } catch (error) {
+  //     alert("Error inesperado: " + error.message);
+  //   }
+  // };
+
   // Utilidades para mostrar datos
-  const getNombreCategoria = (nombreCategoria) => nombreCategoria || "Desconocido";
+  const getNombreCategoria = (nombreCategoria) =>
+    nombreCategoria || "Desconocido";
   const getNombreUsuario = (nombreUsuario) => nombreUsuario || "Desconocido";
   const formatFecha = (fechaString) => {
     if (!fechaString) return "";
-    return new Date(fechaString).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" });
+    return new Date(fechaString).toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
   const getPrioridad = (prioridad) => {
     const prioridades = {
@@ -129,6 +225,14 @@ const Informes = () => {
   return (
     <div className="informes-container">
       <div className="informes-wrapper">
+        <div className="mb-3">
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate("/estadisticas")}
+          >
+            Volver
+          </button>
+        </div>
         <h2>Informes</h2>
         <h5>Filtra y genera reportes:</h5>
 
@@ -161,7 +265,10 @@ const Informes = () => {
               >
                 <option value="">Todos</option>
                 {usuarios.map((u) => (
-                  <option key={u.id_usuario} value={`${u.nombre} ${u.apellido}`}>
+                  <option
+                    key={u.id_usuario}
+                    value={`${u.nombre} ${u.apellido}`}
+                  >
                     {u.nombre} {u.apellido}
                   </option>
                 ))}
@@ -185,26 +292,41 @@ const Informes = () => {
               </select>
             </div>
           </div>
-
-          <div className="text-center mt-3">
-            <button className="boton-reporte" onClick={obtenerTicketsFiltrados}>
-              Buscar Tickets
-            </button>
-          </div>
         </div>
 
         <div className="text-center mt-3">
-          <button className="boton-reporte mx-2" onClick={() => descargarPDF("tendencias")}>
+          <button
+            className="boton-reporte mx-2"
+            onClick={() => generarPdf("generar-pdf-tendencias", filtros)}
+          >
             Tendencias de Problemas
           </button>
-          <button className="boton-reporte mx-2" onClick={() => descargarPDF("tiempos")}>
+          <button
+            className="boton-reporte mx-2"
+            onClick={() => generarPdf("generar-pdf-tiempos", filtros)}
+          >
             Tiempos de Resolución
           </button>
-          <button className="boton-reporte mx-2" onClick={() => descargarPDF("estadisticas")}>
+          <button
+            className="boton-reporte mx-2"
+            onClick={() => generarPdf("generar-pdf-estadisticas", filtros)}
+          >
             Estadísticas Entrantes
           </button>
         </div>
 
+        {/* Vista previa del PDF */}
+        {pdfUrl && (
+          <div className="mt-4 d-flex justify-content-center">
+            <iframe
+              src={pdfUrl}
+              title="Vista previa del PDF"
+              width="100%"
+              height="600px"
+              style={{ border: "1px solid #ccc", minHeight: "600px" }}
+            />
+          </div>
+        )}
 
         <div className="mt-4">
           {loading ? (
@@ -217,22 +339,25 @@ const Informes = () => {
           ) : error ? (
             <Alert variant="danger">Error al cargar los tickets: {error}</Alert>
           ) : tickets.length === 0 ? (
-            <p className="text-center">No hay tickets que coincidan con los filtros.</p>
+            <p className="text-center">
+              No hay tickets que coincidan con los filtros.
+            </p>
           ) : (
-            <div className="d-flex flex-column gap-3">
-              {tickets.map((t) => (
-                <Ticket
-                  key={t.idTicket}
-                  titulo={t.titulo}
-                  fecha={formatFecha(t.fechaCreacion)}
-                  descripcion={t.descripcion || ""}
-                  prioridad={getPrioridad(t.prioridad)}
-                  estado={t.estado || ""}
-                  asignado={getNombreUsuario(t.nombreUsuario)}
-                  categoria={getNombreCategoria(t.nombreCategoria)}
-                />
-              ))}
-            </div>
+            // <div className="d-flex flex-column gap-3">
+            //   {tickets.map((t) => (
+            //     <Ticket
+            //       key={t.idTicket}
+            //       titulo={t.titulo}
+            //       fecha={formatFecha(t.fechaCreacion)}
+            //       descripcion={t.descripcion || ""}
+            //       prioridad={getPrioridad(t.prioridad)}
+            //       estado={t.estado || ""}
+            //       asignado={getNombreUsuario(t.nombreUsuario)}
+            //       categoria={getNombreCategoria(t.nombreCategoria)}
+            //     />
+            //   ))}
+            // </div>
+            null
           )}
         </div>
       </div>

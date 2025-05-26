@@ -6,13 +6,18 @@ import Ticket from "../components/Ticket";
 import "../styles/Home.css";
 import { Container, Spinner, Alert } from "react-bootstrap";
 import Filtro from "../components/Filtro";
+import { useNavigate } from "react-router-dom";
 
 const GestionTicket = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [categorias, setCategorias] = useState([]);
-  //const [usuario, setUsuario] = useState();
+  const [showModal, setShowModal] = useState(false);
+  const [ticketSeleccionado, setTicketSeleccionado] = useState(null);
+  const [idSeguimiento, setIdSeguimiento] = useState("");
+  const [textoBusqueda, setTextoBusqueda] = useState("");
+  const navigate = useNavigate();
 
   // Función para cargar tickets con filtros
   const cargarTickets = async (filters = {}) => {
@@ -32,6 +37,8 @@ const GestionTicket = () => {
       if (filters.anio) params.append("anio", filters.anio);
       if (filters.textoBusqueda)
         params.append("textoBusqueda", filters.textoBusqueda);
+      if (filters.id_ticket) params.append("idTicket", filters.id_ticket);
+      // <-- Añade esto
 
       const url = `https://localhost:7106/api/Filtro/buscar?${params.toString()}`;
       console.log("URL de búsqueda:", url); // Para depuración
@@ -110,6 +117,14 @@ const GestionTicket = () => {
   const getEstado = (estado) => {
     return estado === "A" ? "Activo" : "Cerrado";
   };
+
+  const handleBuscar = () => {
+    handleFilterChange({
+      id_ticket: idSeguimiento,
+      textoBusqueda: textoBusqueda,
+    });
+  };
+
   return (
     <div className="home-container mt-5" style={{}}>
       <div className="d-flex justify-content-center pt-3">
@@ -141,16 +156,22 @@ const GestionTicket = () => {
               ) : (
                 <div className="d-flex flex-column gap-3">
                   {tickets.map((ticket) => (
-                    <Ticket
+                    <div
                       key={ticket.id_ticket}
-                      titulo={ticket.titulo}
-                      fecha={formatFecha(ticket.fecha_creacion)}
-                      descripcion={ticket.descripcion}
-                      prioridad={getPrioridad(ticket.prioridad)}
-                      estado={getEstado(ticket.estado)}
-                      asignado={getNombreUsuario(ticket.id_usuario)}
-                      categoria={getNombreCategoria(ticket.id_categoria)}
-                    />
+                      style={{ cursor: "pointer" }}
+                      onClick={() => navigate(`/tickets/${ticket.id_ticket}`)}
+                    >
+                      <Ticket
+                        id_ticket={ticket.id_ticket}
+                        titulo={ticket.titulo}
+                        fecha={formatFecha(ticket.fecha_creacion)}
+                        descripcion={ticket.descripcion}
+                        prioridad={getPrioridad(ticket.prioridad)}
+                        estado={getEstado(ticket.estado)}
+                        asignado={getNombreUsuario(ticket.id_usuario)}
+                        categoria={getNombreCategoria(ticket.id_categoria)}
+                      />
+                    </div>
                   ))}
                 </div>
               )}

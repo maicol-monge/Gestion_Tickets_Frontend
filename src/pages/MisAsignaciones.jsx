@@ -3,7 +3,7 @@ import { Container, Spinner, Alert } from "react-bootstrap";
 import Filtro from "../components/Filtro";
 import Ticket from "../components/Ticket";
 import { AuthContext } from "../context/AuthContext";
-import "../styles/MisAsignaciones.css"; // Asegúrate de tener este archivo CSS
+import "../styles/MisAsignaciones.css";
 
 const MisAsignaciones = () => {
   const [tickets, setTickets] = useState([]);
@@ -16,7 +16,6 @@ const MisAsignaciones = () => {
   useEffect(() => {
     if (usuario?.id_usuario) {
       setIdUsuario(usuario.id_usuario);
-      console.log("El id del usuario es: " + usuario.id_usuario);
     }
   }, [usuario]);
 
@@ -40,6 +39,7 @@ const MisAsignaciones = () => {
     };
 
     cargarDatosIniciales();
+    // eslint-disable-next-line
   }, [idUsuario]);
 
   const cargarTickets = async (filters = {}) => {
@@ -47,19 +47,17 @@ const MisAsignaciones = () => {
       setLoading(true);
       setError(null);
 
-      // Construimos query params con idUsuario y filtros
       const params = new URLSearchParams({ idUsuario });
 
-      // Añadir filtros sólo si tienen valor
       if (filters.estado && filters.estado !== "todos")
         params.append("estado", filters.estado);
       if (filters.prioridad) params.append("prioridad", filters.prioridad);
-      if (filters.idCategoria)
-        params.append("idCategoria", filters.idCategoria);
+      if (filters.idCategoria) params.append("idCategoria", filters.idCategoria);
       if (filters.mes) params.append("mes", filters.mes);
       if (filters.anio) params.append("anio", filters.anio);
       if (filters.textoBusqueda)
         params.append("textoBusqueda", filters.textoBusqueda);
+      if (filters.id_ticket) params.append("idTicket", filters.id_ticket);
 
       const response = await fetch(
         `https://localhost:7106/api/Filtro/mis-asignaciones?${params.toString()}`
@@ -76,7 +74,6 @@ const MisAsignaciones = () => {
   };
 
   const handleFilterChange = (filters) => {
-    // Aquí puedes modificar la función para aplicar filtros adicionales si tu backend lo permite
     cargarTickets(filters);
   };
 
@@ -85,11 +82,8 @@ const MisAsignaciones = () => {
     return categoria ? categoria.nombre_categoria : "Desconocido";
   };
 
-  const getNombreUsuario = (idUsuario) => {
-    return `Usuario ${idUsuario}`;
-  };
-
   const formatFecha = (fechaString) => {
+    if (!fechaString) return "";
     const options = { year: "numeric", month: "long", day: "numeric" };
     return new Date(fechaString).toLocaleDateString("es-ES", options);
   };
@@ -103,8 +97,14 @@ const MisAsignaciones = () => {
     return prioridades[prioridad] || prioridad;
   };
 
-  const getEstado = (estado) => {
-    return estado === "A" ? "Activo" : "Cerrado";
+  // Estado de asignación según tu lógica
+  const getEstadoAsignacion = (estado) => {
+    if (estado === "P") return "En progreso";
+    if (estado === "E") return "En Espera de Información del Cliente";
+    if (estado === "R") return "Resuelto";
+    if (estado === "A") return "Asignado";
+    if (estado === "D") return "Desasignado";
+    return estado || "Sin estado";
   };
 
   return (
@@ -137,13 +137,15 @@ const MisAsignaciones = () => {
                   {tickets.map((ticket) => (
                     <Ticket
                       key={ticket.id_ticket}
+                      id_ticket={ticket.id_ticket}
                       titulo={ticket.titulo}
                       fecha={formatFecha(ticket.fecha_creacion)}
                       descripcion={ticket.descripcion}
                       prioridad={getPrioridad(ticket.prioridad)}
-                      estado={getEstado(ticket.estado)}
-                      asignado={getNombreUsuario(ticket.id_usuario)}
+                      estado={getEstadoAsignacion(ticket.estado_ticket)}
+                      asignado={ticket.nombre_completo}
                       categoria={getNombreCategoria(ticket.id_categoria)}
+                      origen="mis-asignaciones" // <-- agrega esto
                     />
                   ))}
                 </div>

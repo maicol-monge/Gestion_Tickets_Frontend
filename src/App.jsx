@@ -22,10 +22,15 @@ import CustomNavbar from "./components/CustomNavbar";
 import CrearTicket from "./pages/CrearTicket";
 import GestionTicket from "./pages/GestionTicket";
 import SeguimientoTicketAdmin from "./pages/SeguimientoTicketAdmin";
+import SeguimientoTicketEmpleado from "./pages/SeguimientoTicketEmpleado";
+import SeguimientoTicketCliente from "./pages/SeguimientoTicketCliente"; // Agrega esta línea junto a los otros imports
 
 import MisAsignaciones from "./pages/MisAsignaciones";
 import Informes from "./pages/Informes";
 import Estadisticas from "./pages/Estadisticas";
+import AccesoDenegado from "./pages/AccesoDenegado";
+
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 import "react-bootstrap";
 
@@ -40,32 +45,11 @@ function App() {
     <Router>
       {isAuthenticated && <CustomNavbar />}
       <Routes>
-        {/* Ruta raíz: muestra Home si está logueado, si no, va a Login */}
-        <Route
-          path="/"
-          element={isAuthenticated ? <Home /> : <Navigate to="/login" />}
-        />
+        {/* Rutas públicas */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/acceso-denegado" element={<AccesoDenegado />} />
 
-        <Route
-          path="/crear-usuario-interno"
-          element={
-            isAuthenticated ? <CrearUsuarioInterno /> : <Navigate to="/login" />
-          }
-        />
 
-        <Route
-          path="/gestion-usuarios"
-          element={
-            isAuthenticated ? <UsuariosFiltros /> : <Navigate to="/login" />
-          }
-        />
-
-        <Route
-          path="/crear-usuario-externo"
-          element={
-            isAuthenticated ? <CrearUsuarioExterno /> : <Navigate to="/login" />
-          }
-        />
 
         <Route
           path="/cambiar-contrasena"
@@ -80,61 +64,109 @@ function App() {
           element={!isAuthenticated ? <Login /> : <Navigate to="/" />}
         />
 
-        {/* Ruta protegida para Empresa */}
-        {
+        {/* Rutas solo para admin */}
+        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+          
+
+          <Route
+            path="/crear-usuario-interno"
+            element={
+              isAuthenticated ? <CrearUsuarioInterno /> : <Navigate to="/login" />
+            }
+          />
+
+          <Route
+            path="/gestion-usuarios"
+            element={
+              isAuthenticated ? <UsuariosFiltros /> : <Navigate to="/login" />
+            }
+          />
+
+          <Route
+            path="/crear-usuario-externo"
+            element={
+              isAuthenticated ? <CrearUsuarioExterno /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/gestion-tickets"
+            element={
+              isAuthenticated ? <GestionTicket /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/gestion-usuarios"
+            element={
+              isAuthenticated ? <UsuariosFiltros /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/estadisticas"
+            element={
+              isAuthenticated ? <Estadisticas /> : <Navigate to="/login" />
+            }
+          />
+
+          <Route
+            path="/informes"
+            element={
+              isAuthenticated ? <Informes /> : <Navigate to="/login" />
+            }
+          />
           <Route
             path="/gestion-empresa"
             element={isAuthenticated ? <Empresa /> : <Navigate to="/login" />}
           />
-        }
+          <Route
+            path="/tickets/:id"
+            element={
+              isAuthenticated ? <SeguimientoTicketAdmin /> : <Navigate to="/login" />
+            }
+          />
 
-        {/* Ruta para crear tickets */}
-        <Route
-          path="/crear-ticket"
-          element={isAuthenticated ? <CrearTicket /> : <Navigate to="/login" />}
-        />
+        </Route>
 
-        {/* Ruta para filtrar usuarios */}
-        <Route
-          path="/filtrar"
-          element={
-            isAuthenticated ? <FiltrarUsuarios /> : <Navigate to="/login" />
-          }
-        />
+        {/* Rutas solo para empleados */}
+        <Route element={<ProtectedRoute allowedRoles={["empleado"]} />}>
 
-        {/* Ruta para gestionar tickets */}
-        <Route
-          path="/gestion-tickets"
-          element={
-            isAuthenticated ? <GestionTicket /> : <Navigate to="/login" />
-          }
-        />
+          {/* ...otras rutas solo empleados */}
+        </Route>
 
-        <Route
-          path="/MisAsignaciones" // Ruta absoluta con /
-          element={
-            isAuthenticated ? <MisAsignaciones /> : <Navigate to="/login" />
-          }
-        />
+        {/* Rutas para admin, empleado y cliente */}
+        <Route element={<ProtectedRoute allowedRoles={["admin", "empleado", "cliente"]} />}>
+        
+          <Route
+            path="/"
+            element={isAuthenticated ? <Home /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/seguimiento-cliente/:id"
+            element={
+              isAuthenticated ? <SeguimientoTicketCliente /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/crear-ticket"
+            element={isAuthenticated ? <CrearTicket /> : <Navigate to="/login" />}
+          />
+          {/* ...otras rutas compartidas */}
+        </Route>
 
-        <Route
-          path="/Informes" // Ruta absoluta con /
-          element={isAuthenticated ? <Informes /> : <Navigate to="/login" />}
-        />
-
-        <Route
-          path="/Estadisticas" // Ruta absoluta con /
-          element={
-            isAuthenticated ? <Estadisticas /> : <Navigate to="/login" />
-          }
-        />
-
-        <Route
-          path="/tickets/:id"
-          element={
-            isAuthenticated ? <SeguimientoTicketAdmin /> : <Navigate to="/login" />
-          }
-        />
+        {/* Rutas para empleados y admin */}
+        <Route element={<ProtectedRoute allowedRoles={["admin", "empleado"]} />}>
+          <Route
+            path="/MisAsignaciones"
+            element={
+              isAuthenticated ? <MisAsignaciones /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/mis-asignaciones/:id"
+            element={
+              isAuthenticated ? <SeguimientoTicketEmpleado /> : <Navigate to="/login" />
+            }
+          />
+        </Route>
       </Routes>
     </Router>
   );

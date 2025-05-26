@@ -12,8 +12,19 @@ const Ticket = ({
   asignado,
   categoria,
   id_ticket,
+  origen,
 }) => {
   const navigate = useNavigate();
+
+  const handleVerMas = () => {
+    if (origen === "mis-asignaciones") {
+      navigate(`/mis-asignaciones/${id_ticket}`);
+    } else if (origen === "mis-tickets") {
+      navigate(`/seguimiento-cliente/${id_ticket}`);
+    } else {
+      navigate(`/tickets/${id_ticket}`);
+    }
+  };
 
   return (
     <div
@@ -30,7 +41,7 @@ const Ticket = ({
       <nav className="text-start text-white" id="FechaReporte">
         {fecha}
       </nav>
-      
+
       <div className="d-flex flex-column flex-md-row gap-4 align-items-start justify-content-between">
         <div className="col-8">
           <p className="text-white text-start">
@@ -55,7 +66,7 @@ const Ticket = ({
       </div>
       <div className="d-flex flex-column flex-md-row gap-4 align-items-start justify-content-between">
         <button
-          onClick={() => navigate(`/tickets/${id_ticket}`)}
+          onClick={handleVerMas}
           className="w-25 text-center p-2 btn-vermas"
         >
           Ver más

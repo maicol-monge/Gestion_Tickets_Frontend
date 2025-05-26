@@ -21,6 +21,7 @@ import CustomNavbar from "./components/CustomNavbar";
 
 import CrearTicket from "./pages/CrearTicket";
 import GestionTicket from "./pages/GestionTicket";
+import SeguimientoTicketAdmin from "./pages/SeguimientoTicketAdmin";
 
 import MisAsignaciones from "./pages/MisAsignaciones";
 import Informes from "./pages/Informes";
@@ -125,6 +126,13 @@ function App() {
           path="/Estadisticas" // Ruta absoluta con /
           element={
             isAuthenticated ? <Estadisticas /> : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/tickets/:id"
+          element={
+            isAuthenticated ? <SeguimientoTicketAdmin /> : <Navigate to="/login" />
           }
         />
       </Routes>

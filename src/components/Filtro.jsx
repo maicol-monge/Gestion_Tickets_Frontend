@@ -10,6 +10,7 @@ const Filtro = ({ onFilterChange }) => {
     mes: "",
     anio: "",
     textoBusqueda: "",
+    id_ticket: "", // <-- agrega esto
   });
 
   const [categorias, setCategorias] = useState([]);
@@ -160,9 +161,8 @@ const Filtro = ({ onFilterChange }) => {
             <div className="d-flex align-items-center gap-2">
               {/* Botón para "Activos" */}
               <label
-                className={`filtro-toggle ${
-                  filters.estado === "activos" ? "activo" : ""
-                }`}
+                className={`filtro-toggle ${filters.estado === "activos" ? "activo" : ""
+                  }`}
                 onClick={() => handleEstadoChange("activos")}
                 style={{ cursor: "pointer" }}
               >
@@ -173,16 +173,15 @@ const Filtro = ({ onFilterChange }) => {
                   name="estado"
                   value="activos"
                   checked={filters.estado === "activos"}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   style={{ display: "none" }}
                 />
               </label>
 
               {/* Botón para "Todos" */}
               <label
-                className={`filtro-toggle ${
-                  filters.estado === "todos" ? "activo" : ""
-                }`}
+                className={`filtro-toggle ${filters.estado === "todos" ? "activo" : ""
+                  }`}
                 onClick={() => handleEstadoChange("todos")}
                 style={{ cursor: "pointer" }}
               >
@@ -192,7 +191,7 @@ const Filtro = ({ onFilterChange }) => {
                   name="estado"
                   value="todos"
                   checked={filters.estado === "todos"}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   style={{ display: "none" }}
                 />
               </label>
@@ -282,12 +281,24 @@ const Filtro = ({ onFilterChange }) => {
               Buscar:
             </Form.Label>
             <Form.Control
+              className="w-25"
+              type="number"
+              id="id_ticket"
+              value={filters.id_ticket || ""}
+              onChange={(e) =>
+                setFilters({ ...filters, id_ticket: e.target.value })
+              }
+              placeholder="ID"
+              min={1}
+            />
+            <Form.Control
               type="text"
               id="textoBusqueda"
               value={filters.textoBusqueda}
               onChange={handleBuscarChange}
               placeholder="Buscar por título o descripción"
             />
+
             <Button variant="primary" type="submit">
               Buscar
             </Button>

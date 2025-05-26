@@ -88,44 +88,50 @@ const SubirArchivo = ({ archivo, onArchivoSubido, onArchivoEliminado }) => {
           <span className="text-primary">Subiendo...</span>
         )}
         {estado === "completado" && <span className="text-success">✔</span>}
-        {estado === "error" && <span className="text-danger">Error</span>}
-        {estado === "eliminando" && (
-          <span className="text-warning">Eliminando...</span>
-        )}
-        {estado === "eliminado" && (
-          <span className="text-muted">Eliminado</span>
+        {estado === "error" && (
+          <>
+            <button
+              type="button"
+              className="btn btn-sm btn-warning ms-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEstado("subiendo");
+                setUrl(null);
+                setNombreArchivo(null);
+                subirArchivo();
+              }}
+            >
+              Reintentar
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-danger ms-2"
+              title="Descartar archivo"
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (nombreArchivo) {
+                  setEstado("eliminando");
+                  await supabase.storage.from("files").remove([nombreArchivo]);
+                }
+                // Quitar el archivo de localStorage
+                let archivosGuardados = JSON.parse(
+                  localStorage.getItem("archivos_subidos") || "[]"
+                );
+                archivosGuardados = archivosGuardados.filter(
+                  (n) => n !== nombreArchivo
+                );
+                localStorage.setItem(
+                  "archivos_subidos",
+                  JSON.stringify(archivosGuardados)
+                );
+                if (onArchivoEliminado) onArchivoEliminado(nombreArchivo);
+              }}
+            >
+              ×
+            </button>
+          </>
         )}
       </span>
-      <div>
-        {estado === "completado" && (
-          <button
-            type="button"
-            className="btn btn-sm btn-danger"
-            onClick={(e) => {
-              e.stopPropagation();
-              eliminarArchivo();
-            }}
-            disabled={estado !== "completado"}
-          >
-            Quitar
-          </button>
-        )}
-        {estado === "error" && (
-          <button
-            type="button"
-            className="btn btn-sm btn-warning ms-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              setEstado("subiendo");
-              setUrl(null);
-              setNombreArchivo(null);
-              subirArchivo();
-            }}
-          >
-            Reintentar
-          </button>
-        )}
-      </div>
     </li>
   );
 };

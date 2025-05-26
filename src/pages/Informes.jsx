@@ -84,6 +84,24 @@ const Informes = () => {
   };
 
   const generarPdf = async (tipoReporte, filtros) => {
+    // Validar que hay tickets antes de generar el PDF
+    if (!tickets || tickets.length === 0) {
+      // Mejor diseño usando un modal simple de Bootstrap
+      const alerta = document.createElement("div");
+      alerta.className =
+        "alert alert-warning position-fixed top-0 start-50 translate-middle-x mt-3 shadow";
+      alerta.style.zIndex = 9999;
+      alerta.style.width = "fit-content";
+      alerta.innerHTML = `
+      <strong>¡Atención!</strong> No hay tickets que coincidan con los filtros. No se puede generar el PDF.
+    `;
+      document.body.appendChild(alerta);
+      setTimeout(() => {
+        alerta.remove();
+      }, 3000);
+      return;
+    }
+
     const params = new URLSearchParams(filtros);
     const url = `https://localhost:7106/api/Informes/${tipoReporte}?${params.toString()}`;
 
@@ -104,7 +122,6 @@ const Informes = () => {
         30
       );
 
-      // 💡 Usa doc.autoTable, no autoTable(doc, {...})
       autoTable(doc, {
         startY: 40,
         head: [encabezados],
@@ -175,6 +192,14 @@ const Informes = () => {
   return (
     <div className="informes-container">
       <div className="informes-wrapper">
+        <div className="mb-3">
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate("/Estadisticas")}
+          >
+            Volver
+          </button>
+        </div>
         <h2>Informes</h2>
         <h5>Filtra y genera reportes:</h5>
 
@@ -234,12 +259,6 @@ const Informes = () => {
               </select>
             </div>
           </div>
-
-          <div className="text-center mt-3">
-            <button className="boton-reporte" onClick={obtenerTicketsFiltrados}>
-              Buscar Tickets
-            </button>
-          </div>
         </div>
 
         <div className="text-center mt-3">
@@ -278,20 +297,21 @@ const Informes = () => {
               No hay tickets que coincidan con los filtros.
             </p>
           ) : (
-            <div className="d-flex flex-column gap-3">
-              {tickets.map((t) => (
-                <Ticket
-                  key={t.idTicket}
-                  titulo={t.titulo}
-                  fecha={formatFecha(t.fechaCreacion)}
-                  descripcion={t.descripcion || ""}
-                  prioridad={getPrioridad(t.prioridad)}
-                  estado={t.estado || ""}
-                  asignado={getNombreUsuario(t.nombreUsuario)}
-                  categoria={getNombreCategoria(t.nombreCategoria)}
-                />
-              ))}
-            </div>
+            // <div className="d-flex flex-column gap-3">
+            //   {tickets.map((t) => (
+            //     <Ticket
+            //       key={t.idTicket}
+            //       titulo={t.titulo}
+            //       fecha={formatFecha(t.fechaCreacion)}
+            //       descripcion={t.descripcion || ""}
+            //       prioridad={getPrioridad(t.prioridad)}
+            //       estado={t.estado || ""}
+            //       asignado={getNombreUsuario(t.nombreUsuario)}
+            //       categoria={getNombreCategoria(t.nombreCategoria)}
+            //     />
+            //   ))}
+            // </div>
+            null
           )}
         </div>
       </div>

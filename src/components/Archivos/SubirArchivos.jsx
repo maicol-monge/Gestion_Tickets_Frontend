@@ -103,35 +103,39 @@ const SubirArchivo = ({ archivo, onArchivoSubido, onArchivoEliminado }) => {
             >
               Reintentar
             </button>
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-danger ms-2"
-              title="Descartar archivo"
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (nombreArchivo) {
-                  setEstado("eliminando");
-                  await supabase.storage.from("files").remove([nombreArchivo]);
-                }
-                // Quitar el archivo de localStorage
-                let archivosGuardados = JSON.parse(
-                  localStorage.getItem("archivos_subidos") || "[]"
-                );
-                archivosGuardados = archivosGuardados.filter(
-                  (n) => n !== nombreArchivo
-                );
-                localStorage.setItem(
-                  "archivos_subidos",
-                  JSON.stringify(archivosGuardados)
-                );
-                if (onArchivoEliminado) onArchivoEliminado(nombreArchivo);
-              }}
-            >
-              ×
-            </button>
           </>
         )}
       </span>
+      {/* Botón para quitar archivo, siempre visible excepto cuando está eliminando */}
+      {estado !== "eliminando" && (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-danger ms-2"
+          title="Quitar archivo"
+          onClick={async (e) => {
+            e.stopPropagation();
+            if (nombreArchivo && estado === "completado") {
+              setEstado("eliminando");
+              await supabase.storage.from("files").remove([nombreArchivo]);
+              // Quitar el archivo de localStorage
+              let archivosGuardados = JSON.parse(
+                localStorage.getItem("archivos_subidos") || "[]"
+              );
+              archivosGuardados = archivosGuardados.filter(
+                (n) => n !== nombreArchivo
+              );
+              localStorage.setItem(
+                "archivos_subidos",
+                JSON.stringify(archivosGuardados)
+              );
+            }
+            if (onArchivoEliminado) onArchivoEliminado(nombreArchivo);
+          }}
+          disabled={estado === "subiendo"}
+        >
+          ×
+        </button>
+      )}
     </li>
   );
 };

@@ -38,7 +38,6 @@ const GestionTicket = () => {
       if (filters.textoBusqueda)
         params.append("textoBusqueda", filters.textoBusqueda);
       if (filters.id_ticket) params.append("idTicket", filters.id_ticket);
-      // <-- Añade esto
 
       const url = `https://localhost:7106/api/Filtro/buscar?${params.toString()}`;
       console.log("URL de búsqueda:", url); // Para depuración

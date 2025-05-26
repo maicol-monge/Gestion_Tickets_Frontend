@@ -21,8 +21,13 @@ const SeguimientoTicketAdmin = () => {
     const [nuevoComentario, setNuevoComentario] = useState("");
     const [tareas, setTareas] = useState([]);
     const [resolucion, setResolucion] = useState(null);
+    const [ultimaAsignacion, setUltimaAsignacion] = useState(null);
     const { id } = useParams(); // Asegúrate de que la ruta incluya :id
     const navigate = useNavigate(); // <-- inicializa useNavigate
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     // Supón que tienes el usuario logueado en localStorage/session o contexto
     const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
@@ -149,6 +154,20 @@ const SeguimientoTicketAdmin = () => {
         fetchResolucion();
     }, [ticket?.id_ticket]);
 
+    // Cargar última asignación del ticket
+    useEffect(() => {
+        const fetchUltimaAsignacion = async () => {
+            if (!ticket?.id_ticket) return;
+            try {
+                const res = await axios.get(`https://localhost:7106/api/ticket/ultima-asignacion/${ticket.id_ticket}`);
+                setUltimaAsignacion(res.data);
+            } catch {
+                setUltimaAsignacion(null);
+            }
+        };
+        fetchUltimaAsignacion();
+    }, [ticket?.id_ticket]);
+
     // Función para obtener el nombre de la categoría por id
     const getNombreCategoria = (id_categoria) => {
         const cat = categorias.find(c => c.id_categoria === id_categoria);
@@ -168,6 +187,16 @@ const SeguimientoTicketAdmin = () => {
         if (estado === "A") return { texto: "Abierto", clase: "text-warning" };
         if (estado === "C") return { texto: "Cerrado", clase: "text-success" };
         return { texto: estado, clase: "" };
+    };
+
+    // Nueva función para mostrar el estado de asignación con texto y color
+    const getEstadoAsignacion = (estado) => {
+        if (estado === "P") return { texto: "En progreso", clase: "text-primary" };
+        if (estado === "E") return { texto: "En Espera de Información del Cliente", clase: "text-warning" };
+        if (estado === "R") return { texto: "Resuelto", clase: "text-success" };
+        if (estado === "A") return { texto: "Asignado", clase: "text-info" };
+        if (estado === "D") return { texto: "Desasignado", clase: "text-danger" };
+        return { texto: estado || "Sin estado", clase: "" };
     };
 
     const handleActualizarDetalles = async (e) => {
@@ -222,6 +251,18 @@ const SeguimientoTicketAdmin = () => {
         }
     };
 
+    // Refrescar última asignación
+    const refrescarUltimaAsignacion = async () => {
+        try {
+            const res = await axios.get(`https://localhost:7106/api/ticket/ultima-asignacion/${ticket.id_ticket}`);
+            setUltimaAsignacion(res.data);
+        } catch {
+            setUltimaAsignacion(null);
+        }
+    };
+
+    const ticketCerrado = ticket?.estado === "C";
+
     return (
         <>
 
@@ -230,7 +271,7 @@ const SeguimientoTicketAdmin = () => {
                 <button
                     type="button"
                     className="btn btn-outline-secondary"
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate('/gestion-tickets')}
                 >
                     <i className="bi bi-arrow-left"></i> Volver
                 </button>
@@ -264,6 +305,7 @@ const SeguimientoTicketAdmin = () => {
                                         value={tipoTicket}
                                         onChange={(e) => setTipoTicket(e.target.value)}
                                         required
+                                        disabled={ticketCerrado}
                                     >
                                         <option value="">Selecciona un tipo</option>
                                         <option value="fallo">Fallo</option>
@@ -277,6 +319,7 @@ const SeguimientoTicketAdmin = () => {
                                         value={prioridad}
                                         onChange={(e) => setPrioridad(e.target.value)}
                                         required
+                                        disabled={ticketCerrado}
                                     >
                                         <option value="">Selecciona una prioridad</option>
                                         <option value="critico">Crítico</option>
@@ -298,7 +341,7 @@ const SeguimientoTicketAdmin = () => {
                                             value={categoria}
                                             onChange={(e) => setCategoria(e.target.value)}
                                             required
-                                            disabled={categorias.length === 0}
+                                            disabled={categorias.length === 0 || ticketCerrado}
                                         >
                                             <option value="">Selecciona una categoría</option>
                                             {categorias.map((cat) => (
@@ -309,7 +352,7 @@ const SeguimientoTicketAdmin = () => {
                                         </select>
                                     )}
                                 </div>
-                                <button className="w-100" type="submit" style={{ background: '#2B3945' }}>
+                                <button className="w-100" type="submit" style={{ background: '#2B3945' }} disabled={ticketCerrado}>
                                     Cambiar detalles
                                 </button>
                             </form>
@@ -372,6 +415,7 @@ const SeguimientoTicketAdmin = () => {
                                 className="mt-2"
                                 style={{ background: '#2B3945' }}
                                 disabled={
+                                    ticketCerrado ||
                                     !tecnicoSeleccionado ||
                                     personalAsignado.length > 0 ||
                                     personalAsignado.some(p => p.id_tecnico === tecnicoSeleccionado.id_tecnico)
@@ -391,6 +435,7 @@ const SeguimientoTicketAdmin = () => {
                                             setPersonalAsignado([...personalAsignado, tecnicoSeleccionado]);
                                             setTecnicoSeleccionado(null);
                                             await refrescarHistorial();
+                                            await refrescarUltimaAsignacion(); // <-- Actualiza el estado en Datos Generales
                                             Swal.fire("Éxito", "Personal asignado correctamente.", "success");
                                         } catch (error) {
                                             Swal.fire("Error", "No se pudo asignar el personal.", "error");
@@ -439,12 +484,14 @@ const SeguimientoTicketAdmin = () => {
                                                                 });
                                                                 setPersonalAsignado(personalAsignado.filter(p => p.id_tecnico !== tec.id_tecnico));
                                                                 await refrescarHistorial();
+                                                                await refrescarUltimaAsignacion(); // <-- Actualiza el estado en Datos Generales
                                                                 Swal.fire("Éxito", "Personal desasignado correctamente.", "success");
                                                             } catch (error) {
                                                                 Swal.fire("Error", "No se pudo desasignar el personal.", "error");
                                                             }
                                                         }
                                                     }}
+                                                    disabled={ticketCerrado}
                                                 >
                                                     Desasignar
                                                 </button>
@@ -473,11 +520,20 @@ const SeguimientoTicketAdmin = () => {
                                         <p><strong>Técnico asignado:</strong> {personalAsignado[0] ? `${personalAsignado[0].usuario.nombre} ${personalAsignado[0].usuario.apellido}` : "Ninguno"}</p>
                                     </div>
                                 </div>
-                                <p className="text-center"><strong>Estado del Ticket:</strong> {getEstadoTicket(ticket?.estado).texto}</p>
+                                <p className="text-center">
+                                    <strong>Estado:</strong>{" "}
+                                    {ultimaAsignacion
+                                        ? <span className={getEstadoAsignacion(ultimaAsignacion.estado_ticket).clase}>
+                                            {getEstadoAsignacion(ultimaAsignacion.estado_ticket).texto}
+                                        </span>
+                                        : "Sin estado"}
+                                </p>
                             </div>
                             <h5 className="fw-bolder my-4">Archivos adjuntos:</h5>
                             <div className="p-4" style={{ border: '2px solid #2B3945', borderRadius: '8px', height: '122px', overflowY: 'auto' }}>
-                                {!ticket?.archivos_adjuntos || ticket.archivos_adjuntos.length === 0 ? (
+                                {ticketCerrado ? (
+                                    <span className="text-muted">No puedes consultar archivos en un ticket cerrado.</span>
+                                ) : !ticket?.archivos_adjuntos || ticket.archivos_adjuntos.length === 0 ? (
                                     <span className="text-muted">No hay archivos adjuntos.</span>
                                 ) : (
                                     <ul className="list-group">
@@ -509,6 +565,7 @@ const SeguimientoTicketAdmin = () => {
                                         onChange={e => setNuevoComentario(e.target.value)}
                                         rows={3}
                                         style={{ resize: "vertical" }}
+                                        disabled={ticketCerrado}
                                     />
                                 </div>
                                 <div className="d-flex justify-content-center">
@@ -534,6 +591,7 @@ const SeguimientoTicketAdmin = () => {
                                                 Swal.fire("Error", "No se pudo enviar el comentario.", "error");
                                             }
                                         }}
+                                        disabled={ticketCerrado}
                                     >
                                         Enviar
                                     </button>

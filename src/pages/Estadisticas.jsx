@@ -9,8 +9,12 @@ import '../styles/Estadisticas.css';
 const Estadisticas = () => {
   const [resumen, setResumen] = useState({
     abiertos: 0,
+    cerrados: 0,
     enProgreso: 0,
-    resueltos: 0
+    enEspera: 0,
+    resueltos: 0,
+    asignados: 0,
+    desasignados: 0
   });
 
   const [tendencias, setTendencias] = useState([]);
@@ -31,7 +35,9 @@ const Estadisticas = () => {
         const datosFormateados = response.data.map(d => ({
           ...d,
           MesAnio: `${d.mes}/${d.anio}`,
-          Total: (d.abiertos || 0) + (d.cerrados || 0)
+          Total: (d.abiertos || 0) + (d.cerrados || 0),
+          Abiertos: d.abiertos || 0,
+          Cerrados: d.cerrados || 0
         }));
         setTendencias(datosFormateados);
       } catch (error) {
@@ -61,37 +67,54 @@ const Estadisticas = () => {
             </Link>
         </div>
 
-
         <div className="card shadow p-4 text-center mt-4">
           <h5 className="mb-4"><strong>Detalles en tiempo real:</strong></h5>
           <div className="row">
-            <div className="col-md-4 mb-3">
-              <label>Cantidad de Tickets abiertos:</label>
+            <div className="col-md-3 mb-3">
+              <label>Cantidad de Tickets Abiertos:</label>
               <input type="text" className="form-control text-center" value={resumen.abiertos} readOnly />
             </div>
-            <div className="col-md-4 mb-3">
+            <div className="col-md-3 mb-3">
+              <label>Cantidad de Tickets Cerrados:</label>
+              <input type="text" className="form-control text-center" value={resumen.cerrados} readOnly />
+            </div>
+            <div className="col-md-3 mb-3">
               <label>Cantidad de Tickets en Progreso:</label>
               <input type="text" className="form-control text-center" value={resumen.enProgreso} readOnly />
             </div>
-            <div className="col-md-4 mb-3">
-              <label>Cantidad de Tickets resueltos:</label>
+            <div className="col-md-3 mb-3">
+              <label>Cantidad de Tickets en Espera de Cliente:</label>
+              <input type="text" className="form-control text-center" value={resumen.enEspera} readOnly />
+            </div>
+            <div className="col-md-3 mb-3">
+              <label>Cantidad de Tickets Resueltos:</label>
               <input type="text" className="form-control text-center" value={resumen.resueltos} readOnly />
+            </div>
+            <div className="col-md-3 mb-3">
+              <label>Cantidad de Tickets Asignados:</label>
+              <input type="text" className="form-control text-center" value={resumen.asignados} readOnly />
+            </div>
+            <div className="col-md-3 mb-3">
+              <label>Cantidad de Tickets Desasignados:</label>
+              <input type="text" className="form-control text-center" value={resumen.desasignados} readOnly />
             </div>
           </div>
         </div>
 
         {/* La gráfica solo se mostrará si hay un endpoint real de tendencias */}
         <div className="mt-5">
-        <h5 className="text-center">Tendencias de Tickets</h5>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={tendencias}>
-            <CartesianGrid stroke="#ccc" />
-            <XAxis dataKey="MesAnio" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="Total" stroke="#007bff" strokeWidth={2} name="Total Tickets" />
-          </LineChart>
-        </ResponsiveContainer>
+          <h5 className="text-center">Tendencias de Tickets</h5>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={tendencias}>
+              <CartesianGrid stroke="#ccc" />
+              <XAxis dataKey="MesAnio" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="Total" stroke="#007bff" strokeWidth={2} name="Total Tickets" />
+              <Line type="monotone" dataKey="Abiertos" stroke="#28a745" strokeWidth={2} name="Abiertos" />
+              <Line type="monotone" dataKey="Cerrados" stroke="#dc3545" strokeWidth={2} name="Cerrados" />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
 
       </main>

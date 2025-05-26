@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
-
+import Swal from "sweetalert2";
 
 export default function CrearUsuarioExterno() {
   const navigate = useNavigate(); 
@@ -98,17 +98,31 @@ export default function CrearUsuarioExterno() {
       const data = await respuesta.json();
 
       if (respuesta.ok) {
-        alert("Usuario externo creado correctamente");
+        await Swal.fire({
+          icon: "success",
+          title: "Usuario externo creado correctamente",
+          confirmButtonColor: "#3085d6"
+        });
         limpiarCampos();
       } else {
         if (data.message && data.message.toLowerCase().includes("correo")) {
           setErrorCorreo("Este correo electrónico ya está registrado");
         } else {
-          alert(data.message || "Error al crear usuario");
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: data.message || "Error al crear usuario",
+            confirmButtonColor: "#d33"
+          });
         }
       }
     } catch (error) {
-      alert("Error al conectar con el servidor");
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error al conectar con el servidor",
+        confirmButtonColor: "#d33"
+      });
     }
   };
 

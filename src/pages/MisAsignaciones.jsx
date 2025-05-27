@@ -64,6 +64,7 @@ const MisAsignaciones = () => {
       );
       if (!response.ok) throw new Error("Error al cargar asignaciones");
       const data = await response.json();
+      console.log(data);
 
       setTickets(data);
     } catch (err) {
@@ -97,14 +98,10 @@ const MisAsignaciones = () => {
     return prioridades[prioridad] || prioridad;
   };
 
-  // Estado de asignación según tu lógica
-  const getEstadoAsignacion = (estado) => {
-    if (estado === "P") return "En progreso";
-    if (estado === "E") return "En Espera de Información del Cliente";
-    if (estado === "R") return "Resuelto";
-    if (estado === "A") return "Asignado";
-    if (estado === "D") return "Desasignado";
-    return estado || "Sin estado";
+
+  const getEstado = (estado) => {
+    console.log(estado)
+    return estado === "A" ? "Activo" : "Cerrado";
   };
 
   return (
@@ -142,7 +139,7 @@ const MisAsignaciones = () => {
                       fecha={formatFecha(ticket.fecha_creacion)}
                       descripcion={ticket.descripcion}
                       prioridad={getPrioridad(ticket.prioridad)}
-                      estado={getEstadoAsignacion(ticket.estado_ticket)}
+                      estado={getEstado(ticket.estado)}
                       asignado={ticket.nombre_completo}
                       categoria={getNombreCategoria(ticket.id_categoria)}
                       origen="mis-asignaciones" // <-- agrega esto

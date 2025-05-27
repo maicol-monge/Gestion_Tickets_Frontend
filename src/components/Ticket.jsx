@@ -59,7 +59,7 @@ const Ticket = ({
             {estado}
           </p>
           <p className="text-white text-start">
-            <b>Asignado: </b>
+            <b>Categoría: </b>
             {categoria}
           </p>
         </div>

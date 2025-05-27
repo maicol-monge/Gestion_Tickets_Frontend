@@ -108,6 +108,7 @@ const ListaTickets = () => {
 
   // Traducir estado
   const getEstado = (estado) => {
+    console.log(estado);
     return estado === "A" ? "Activo" : "Cerrado";
   };
 
